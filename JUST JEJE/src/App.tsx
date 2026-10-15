@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { TaskGroup, PoolItem, GoogleSyncConfig } from "./types";
+import { TaskGroup, PoolItem, GoogleSyncConfig, SupabaseConfig } from "./types";
 import {
   loadTaskGroups,
   saveTaskGroups,
@@ -7,9 +7,16 @@ import {
   savePoolItems,
   loadGoogleConfig,
   saveGoogleConfig,
+  loadSupabaseConfig,
+  saveSupabaseConfig,
   DEFAULT_TASK_GROUPS,
   DEFAULT_POOL_ITEMS,
 } from "./utils/storage";
+import {
+  fetchRemoteData,
+  pushAllToSupabase,
+  setupRealtimeSubscription,
+} from "./utils/supabaseSync";
 import { normalizeThemeId } from "./utils/themes";
 import { Header } from "./components/Header";
 import { TaskCard } from "./components/TaskCard";
@@ -25,6 +32,7 @@ function App() {
   const [taskGroups, setTaskGroups] = useState<TaskGroup[]>(loadTaskGroups);
   const [poolItems, setPoolItems] = useState<PoolItem[]>(loadPoolItems);
   const [googleConfig, setGoogleConfig] = useState<GoogleSyncConfig>(loadGoogleConfig);
+  const [supabaseConfig, setSupabaseConfig] = useState<SupabaseConfig>(loadSupabaseConfig);
 
   const [username, setUsername] = useState<string>(() => {
     return localStorage.getItem("just_jeje_username") || "Username";
@@ -57,6 +65,53 @@ function App() {
   useEffect(() => {
     savePoolItems(poolItems);
   }, [poolItems]);
+
+  useEffect(() => {
+    saveSupabaseConfig(supabaseConfig);
+  }, [supabaseConfig]);
+
+  // Initial fetch and Supabase Realtime subscription
+  useEffect(() => {
+    if (!supabaseConfig.isConnected || !supabaseConfig.url) return;
+
+    let isMounted = true;
+    fetchRemoteData().then((remote) => {
+      if (!isMounted || !remote) return;
+      if (remote.taskGroups && remote.taskGroups.length > 0) setTaskGroups(remote.taskGroups);
+      if (remote.poolItems && remote.poolItems.length > 0) setPoolItems(remote.poolItems);
+      if (remote.username) setUsername(remote.username);
+      if (remote.theme) setCurrentTheme(remote.theme);
+    });
+
+    const unsubscribe = setupRealtimeSubscription(() => {
+      fetchRemoteData().then((remote) => {
+        if (!isMounted || !remote) return;
+        if (remote.taskGroups) setTaskGroups(remote.taskGroups);
+        if (remote.poolItems) setPoolItems(remote.poolItems);
+        if (remote.username) setUsername(remote.username);
+        if (remote.theme) setCurrentTheme(remote.theme);
+      });
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
+  }, [supabaseConfig.isConnected, supabaseConfig.url]);
+
+  // Auto-sync debounced changes to Supabase
+  useEffect(() => {
+    if (!supabaseConfig.isConnected || !supabaseConfig.autoSync || !supabaseConfig.url) return;
+
+    const timer = setTimeout(() => {
+      pushAllToSupabase(taskGroups, poolItems, username, currentTheme).catch((err) => {
+        console.warn("Auto sync Supabase gagal:", err);
+      });
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [taskGroups, poolItems, username, currentTheme, supabaseConfig.isConnected, supabaseConfig.autoSync, supabaseConfig.url]);
+
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -212,6 +267,17 @@ function App() {
     saveGoogleConfig(cfg);
   };
 
+  const handleSaveSupabaseConfig = (cfg: SupabaseConfig) => {
+    setSupabaseConfig(cfg);
+    saveSupabaseConfig(cfg);
+  };
+
+  const handleSyncSupabaseNow = async () => {
+    showToast("Menyinkronkan data ke Supabase...");
+    const res = await pushAllToSupabase(taskGroups, poolItems, username, currentTheme);
+    showToast(res.message);
+  };
+
   return (
     <div
       className="app-shell"
@@ -275,6 +341,9 @@ function App() {
             <SettingsView
               config={googleConfig}
               onSaveConfig={handleSaveGoogleConfig}
+              supabaseConfig={supabaseConfig}
+              onSaveSupabaseConfig={handleSaveSupabaseConfig}
+              onSyncSupabaseNow={handleSyncSupabaseNow}
               onResetToDefaults={handleResetToDefaults}
               onBack={() => setCurrentView("dashboard")}
               taskGroups={taskGroups}

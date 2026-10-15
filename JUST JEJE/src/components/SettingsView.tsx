@@ -12,13 +12,23 @@ import {
   Palette,
   LogOut,
   User,
+  Database,
+  Cloud,
+  RefreshCw,
+  Copy,
+  Check,
 } from "lucide-react";
-import { GoogleSyncConfig, TaskGroup } from "../types";
-import { THEMES, normalizeThemeId, getThemeById } from "../utils/themes";
+import { GoogleSyncConfig, TaskGroup, SupabaseConfig } from "../types";
+import { THEMES, normalizeThemeId } from "../utils/themes";
+import { testSupabaseConnection } from "../utils/supabaseSync";
+import { DEFAULT_PUBLISHABLE_KEY, saveSupabaseConfigToStorage } from "../utils/supabase";
 
 interface SettingsViewProps {
   config: GoogleSyncConfig;
   onSaveConfig: (config: GoogleSyncConfig) => void;
+  supabaseConfig: SupabaseConfig;
+  onSaveSupabaseConfig: (config: SupabaseConfig) => void;
+  onSyncSupabaseNow: () => Promise<void>;
   onResetToDefaults: () => void;
   onBack: () => void;
   taskGroups: TaskGroup[];
@@ -31,6 +41,9 @@ interface SettingsViewProps {
 export const SettingsView: React.FC<SettingsViewProps> = ({
   config,
   onSaveConfig,
+  supabaseConfig,
+  onSaveSupabaseConfig,
+  onSyncSupabaseNow,
   onResetToDefaults,
   onBack,
   taskGroups,
@@ -41,6 +54,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 }) => {
   const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
   const [isDesktopModalOpen, setIsDesktopModalOpen] = useState(false);
+  const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [tempUsername, setTempUsername] = useState(username);
 
@@ -48,6 +62,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [clientId, setClientId] = useState(config.clientId);
   const [autoSync, setAutoSync] = useState(config.autoSync);
   const [syncStatusMsg, setSyncStatusMsg] = useState("");
+
+  // Supabase config state inside modal
+  const [supabaseUrl, setSupabaseUrl] = useState(supabaseConfig.url || "");
+  const [supabaseKey, setSupabaseKey] = useState(
+    supabaseConfig.publishableKey || DEFAULT_PUBLISHABLE_KEY
+  );
+  const [autoSyncSupabase, setAutoSyncSupabase] = useState(supabaseConfig.autoSync ?? true);
+  const [isTesting, setIsTesting] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [isCopiedSql, setIsCopiedSql] = useState(false);
 
   const handleSaveGoogleConfig = () => {
     onSaveConfig({
@@ -85,6 +110,91 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     setSyncStatusMsg("Koneksi Google Tasks diputus.");
   };
 
+  // --- Supabase Handlers ---
+  const handleTestSupabase = async () => {
+    setIsTesting(true);
+    setTestResult(null);
+
+    // Simpan sementara credentials ke storage agar client ter-inisialisasi
+    saveSupabaseConfigToStorage({
+      url: supabaseUrl.trim(),
+      publishableKey: supabaseKey.trim(),
+      isConnected: false,
+      autoSync: autoSyncSupabase,
+    });
+
+    const res = await testSupabaseConnection();
+    setTestResult(res);
+    setIsTesting(false);
+
+    if (res.success) {
+      const updatedConfig: SupabaseConfig = {
+        url: supabaseUrl.trim(),
+        publishableKey: supabaseKey.trim(),
+        isConnected: true,
+        autoSync: autoSyncSupabase,
+        lastSyncedAt: Date.now(),
+      };
+      onSaveSupabaseConfig(updatedConfig);
+    }
+  };
+
+  const handleSaveSupabase = () => {
+    const updatedConfig: SupabaseConfig = {
+      url: supabaseUrl.trim(),
+      publishableKey: supabaseKey.trim(),
+      isConnected: !!supabaseUrl.trim() && (supabaseConfig.isConnected || (testResult?.success ?? false)),
+      autoSync: autoSyncSupabase,
+      lastSyncedAt: Date.now(),
+    };
+    onSaveSupabaseConfig(updatedConfig);
+    setTestResult({
+      success: true,
+      message: "Pengaturan Supabase berhasil disimpan!",
+    });
+    setTimeout(() => {
+      setIsSupabaseModalOpen(false);
+    }, 1200);
+  };
+
+  const handleDisconnectSupabase = () => {
+    const updatedConfig: SupabaseConfig = {
+      ...supabaseConfig,
+      isConnected: false,
+    };
+    onSaveSupabaseConfig(updatedConfig);
+    setTestResult({
+      success: false,
+      message: "Koneksi Supabase diputus.",
+    });
+  };
+
+  const handleManualSyncSupabase = async () => {
+    setIsSyncing(true);
+    try {
+      await onSyncSupabaseNow();
+      setTestResult({
+        success: true,
+        message: "Sinkronisasi data ke Supabase berhasil!",
+      });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setTestResult({
+        success: false,
+        message: `Gagal sinkron: ${msg}`,
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleCopySqlNotice = () => {
+    const notice = "Script SQL Supabase tersimpan di file: supabase/schema.sql pada folder project Anda. Buka file tersebut dan paste ke SQL Editor di dashboard Supabase.";
+    navigator.clipboard.writeText(notice);
+    setIsCopiedSql(true);
+    setTimeout(() => setIsCopiedSql(false), 2500);
+  };
+
   const handleSaveUsername = () => {
     if (tempUsername.trim()) {
       onUpdateUsername(tempUsername.trim());
@@ -98,10 +208,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   const handleLogout = () => {
     const confirmLogout = window.confirm(
-      "Apakah Anda yakin ingin LOGOUT?\n\nKoneksi Google Tasks akan diputus."
+      "Apakah Anda yakin ingin LOGOUT?\n\nKoneksi Google Tasks dan Supabase akan diputus."
     );
     if (confirmLogout) {
       handleDisconnect();
+      handleDisconnectSupabase();
       const resetConfirm = window.confirm("Apakah Anda juga ingin mereset data to-do ke setelan awal mockup?");
       if (resetConfirm) {
         onResetToDefaults();
@@ -112,7 +223,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   return (
     <div className="settings-view-container">
-      {/* Settings Top Header (Mockup: 'Profil' and chevron right '>' button) */}
+      {/* Settings Top Header */}
       <div className="settings-header">
         <div className="settings-header-placeholder" />
         <h1 className="settings-title">Profil</h1>
@@ -158,7 +269,27 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </div>
 
-      {/* 2. Synchronize to Desktop Card */}
+      {/* 2. Cloud Sync (Supabase Database & Realtime) Card */}
+      <div
+        className="menu-card"
+        onClick={() => setIsSupabaseModalOpen(true)}
+        role="button"
+        tabIndex={0}
+      >
+        <div className="menu-card-left">
+          <Database size={18} className="menu-card-icon" />
+          <span className="menu-card-text">Cloud Sync (Supabase Database)</span>
+        </div>
+        {supabaseConfig.isConnected ? (
+          <span className="badge-connected-dot" title="Tersambung ke Supabase Cloud">
+            ✓ Connected
+          </span>
+        ) : (
+          <span className="badge-pending-dot">Setup Cloud</span>
+        )}
+      </div>
+
+      {/* 3. Synchronize to Desktop Card */}
       <div
         className="menu-card"
         onClick={() => setIsDesktopModalOpen(true)}
@@ -171,7 +302,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </div>
 
-      {/* 3. Synchronize to To Do Task Google Card */}
+      {/* 4. Synchronize to To Do Task Google Card */}
       <div
         className="menu-card"
         onClick={() => setIsGoogleModalOpen(true)}
@@ -189,7 +320,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         )}
       </div>
 
-      {/* 4. Export to PDF Card */}
+      {/* 5. Export to PDF Card */}
       <div
         className="menu-card"
         onClick={handleExportPDF}
@@ -202,7 +333,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </div>
 
-      {/* 5. Change Theme Card & Visual Theme Preset Grid (fuckUniversity style) */}
+      {/* 6. Change Theme Card & Visual Theme Preset Grid */}
       <div className="menu-card menu-card-theme-expand">
         <div className="menu-card-theme-header">
           <div className="menu-card-left">
@@ -244,57 +375,195 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   }}
                 >
                   <div
-                    className="theme-preset-panel"
+                    className="preview-panel"
                     style={{ backgroundColor: th.panel }}
                   >
-                    <span
-                      className="theme-preset-dot"
-                      style={{ backgroundColor: th.logo }}
-                    />
-                  </div>
-                  <div className="theme-preset-chips">
-                    {th.covers.slice(0, 3).map((col, idx) => (
-                      <span
-                        key={idx}
-                        className="theme-preset-chip"
-                        style={{ backgroundColor: col }}
-                      />
-                    ))}
+                    <span className="preview-icon">{th.icon}</span>
                   </div>
                 </div>
-                <div className="theme-preset-info">
-                  <span className="theme-preset-icon">{th.icon}</span>
-                  <span className="theme-preset-name">{th.name}</span>
-                </div>
+                <span className="preset-name">{th.name}</span>
               </button>
             );
           })}
         </div>
-
-        {/* Active Theme Description Banner */}
-        <div className="theme-active-desc">
-          <span className="theme-active-desc-icon">{getThemeById(currentTheme).icon}</span>
-          <span>{getThemeById(currentTheme).description}</span>
-        </div>
       </div>
 
-      {/* 6. LOGOUT Button (Full width black button) */}
-      <button className="btn-logout" onClick={handleLogout}>
-        <LogOut size={18} className="btn-logout-icon" />
-        <span>LOGOUT</span>
-      </button>
+      {/* 7. Logout Button */}
+      <div className="logout-container">
+        <button className="btn-logout" onClick={handleLogout}>
+          <LogOut size={16} className="btn-logout-icon" />
+          <span>LOGOUT</span>
+        </button>
+      </div>
 
-      {/* Sub-Modal: Google Tasks Synchronization Settings */}
+      {/* Sub-Modal: Supabase Cloud Sync */}
+      {isSupabaseModalOpen && (
+        <div className="modal-backdrop" onClick={() => setIsSupabaseModalOpen(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-header-title">
+                <Database size={18} className="section-icon-blue" />
+                <h3>Supabase Cloud Sync</h3>
+              </div>
+              <button
+                className="modal-close-btn"
+                onClick={() => setIsSupabaseModalOpen(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="modal-body settings-body">
+              <p className="section-desc">
+                Hubungkan project dengan database Supabase untuk sinkronisasi otomatis
+                antara Desktop Widget dan Aplikasi Mobile Android secara real-time.
+              </p>
+
+              <div className="sync-status-box">
+                {supabaseConfig.isConnected ? (
+                  <div className="status-badge connected">
+                    <CheckCircle2 size={16} />
+                    <span>Terhubung ke Supabase</span>
+                  </div>
+                ) : (
+                  <div className="status-badge disconnected">
+                    <AlertCircle size={16} />
+                    <span>Belum Terhubung</span>
+                  </div>
+                )}
+
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button
+                    className="btn-primary-small"
+                    onClick={handleTestSupabase}
+                    disabled={isTesting}
+                  >
+                    {isTesting ? "Menguji..." : "Uji Koneksi"}
+                  </button>
+                  {supabaseConfig.isConnected && (
+                    <button
+                      className="btn-primary-small"
+                      style={{ background: "#10b981", display: "flex", alignItems: "center", gap: "5px" }}
+                      onClick={handleManualSyncSupabase}
+                      disabled={isSyncing}
+                      title="Unggah to-do saat ini ke cloud"
+                    >
+                      <RefreshCw size={13} className={isSyncing ? "spin-animation" : ""} />
+                      <span>{isSyncing ? "Menyinkron..." : "Sync Sekarang"}</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {testResult && (
+                <div className={`toast-inline ${testResult.success ? "success" : "error"}`}>
+                  {testResult.message}
+                </div>
+              )}
+
+              <div className="form-group">
+                <label className="modal-label">Supabase Project URL:</label>
+                <input
+                  type="text"
+                  className="modal-input"
+                  placeholder="https://your-project-id.supabase.co"
+                  value={supabaseUrl}
+                  onChange={(e) => setSupabaseUrl(e.target.value)}
+                />
+                <span className="input-hint">
+                  Dapatkan di Supabase Dashboard &gt; Project Settings &gt; API &gt; Project URL.
+                </span>
+              </div>
+
+              <div className="form-group">
+                <label className="modal-label">Publishable / Anon Key:</label>
+                <input
+                  type="text"
+                  className="modal-input font-mono"
+                  placeholder="sb_publishable_..."
+                  value={supabaseKey}
+                  onChange={(e) => setSupabaseKey(e.target.value)}
+                />
+                <span className="input-hint">
+                  Kunci akses publik yang aman ditaruh di sisi aplikasi client/mobile.
+                </span>
+              </div>
+
+              <div className="checkbox-row">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={autoSyncSupabase}
+                    onChange={(e) => setAutoSyncSupabase(e.target.checked)}
+                  />
+                  <span>Otomatis sinkron saat menambah, mengubah, atau mencentang to-do</span>
+                </label>
+              </div>
+
+              {/* Info box: Setup Database Tables */}
+              <div className="supabase-sql-box">
+                <div className="supabase-sql-header">
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <Cloud size={14} />
+                    <strong>Tabel Database Diperlukan</strong>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn-copy-sql"
+                    onClick={handleCopySqlNotice}
+                  >
+                    {isCopiedSql ? <Check size={13} /> : <Copy size={13} />}
+                    <span>{isCopiedSql ? "Tersalin!" : "Salin Petunjuk"}</span>
+                  </button>
+                </div>
+                <p className="supabase-sql-desc">
+                  Script SQL lengkap sudah dibuat di <code>supabase/schema.sql</code>.
+                  Jalankan di <strong>Supabase Dashboard &gt; SQL Editor</strong> untuk membuat tabel:
+                  {" "}<code>task_groups</code>, <code>tasks</code>, <code>pool_items</code>, dan <code>user_settings</code>.
+                </p>
+              </div>
+
+              <div className="modal-actions">
+                {supabaseConfig.isConnected && (
+                  <button
+                    type="button"
+                    className="btn-danger-outline-small"
+                    onClick={handleDisconnectSupabase}
+                  >
+                    Putus Koneksi
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="btn-modal-cancel"
+                  onClick={() => setIsSupabaseModalOpen(false)}
+                >
+                  Tutup
+                </button>
+                <button
+                  type="button"
+                  className="btn-modal-submit"
+                  onClick={handleSaveSupabase}
+                >
+                  Simpan Konfigurasi
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sub-Modal: Google Tasks Integration */}
       {isGoogleModalOpen && (
         <div className="modal-backdrop" onClick={() => setIsGoogleModalOpen(false)}>
           <div
-            className="modal-content settings-modal-content"
+            className="modal-content"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header">
               <div className="modal-header-title">
                 <Globe size={18} className="section-icon-blue" />
-                <h3>Google Tasks Synchronization</h3>
+                <h3>Google Tasks Sync</h3>
               </div>
               <button
                 className="modal-close-btn"
@@ -358,7 +627,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   onChange={(e) => setClientId(e.target.value)}
                 />
                 <span className="input-hint">
-                  Didapatkan dari Google Cloud Console (APIs & Services {">"} Credentials).
+                  Didapatkan dari Google Cloud Console (APIs & Services &gt; Credentials).
                 </span>
               </div>
 

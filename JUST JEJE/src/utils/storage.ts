@@ -1,9 +1,11 @@
-import { TaskGroup, PoolItem, GoogleSyncConfig } from "../types";
+import { TaskGroup, PoolItem, GoogleSyncConfig, SupabaseConfig } from "../types";
+import { DEFAULT_PUBLISHABLE_KEY } from "./supabase";
 
 const STORAGE_KEYS = {
   TASK_GROUPS: "just_jeje_task_groups",
   GENERATE_POOL: "just_jeje_generate_pool",
   GOOGLE_CONFIG: "just_jeje_google_config",
+  SUPABASE_CONFIG: "just_jeje_supabase_config",
 };
 
 export const DEFAULT_TASK_GROUPS: TaskGroup[] = [
@@ -113,3 +115,36 @@ export function saveGoogleConfig(config: GoogleSyncConfig): void {
     console.error("Failed to save google config", e);
   }
 }
+
+export const DEFAULT_SUPABASE_CONFIG: SupabaseConfig = {
+  url: import.meta.env.VITE_SUPABASE_URL || "",
+  publishableKey: import.meta.env.VITE_SUPABASE_ANON_KEY || DEFAULT_PUBLISHABLE_KEY,
+  isConnected: false,
+  autoSync: true,
+};
+
+export function loadSupabaseConfig(): SupabaseConfig {
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.SUPABASE_CONFIG);
+    if (data) {
+      const parsed = JSON.parse(data);
+      return {
+        ...DEFAULT_SUPABASE_CONFIG,
+        ...parsed,
+        publishableKey: parsed.publishableKey || DEFAULT_SUPABASE_CONFIG.publishableKey,
+      };
+    }
+  } catch (e) {
+    console.error("Failed to load supabase config", e);
+  }
+  return DEFAULT_SUPABASE_CONFIG;
+}
+
+export function saveSupabaseConfig(config: SupabaseConfig): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.SUPABASE_CONFIG, JSON.stringify(config));
+  } catch (e) {
+    console.error("Failed to save supabase config", e);
+  }
+}
+

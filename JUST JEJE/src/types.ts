@@ -26,3 +26,12 @@ export interface GoogleSyncConfig {
   autoSync: boolean;
   lastSyncedAt?: number;
 }
+
+export interface SupabaseConfig {
+  url: string;
+  publishableKey: string;
+  isConnected: boolean;
+  autoSync: boolean;
+  lastSyncedAt?: number;
+}
+
