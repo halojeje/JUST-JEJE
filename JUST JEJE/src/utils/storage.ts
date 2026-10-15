@@ -1,5 +1,6 @@
 import { TaskGroup, PoolItem, GoogleSyncConfig, SupabaseConfig } from "../types";
 import { DEFAULT_PUBLISHABLE_KEY, DEFAULT_SUPABASE_URL } from "./supabase";
+import { DEFAULT_GOOGLE_CLIENT_ID } from "./googleTasks";
 
 const STORAGE_KEYS = {
   TASK_GROUPS: "just_jeje_task_groups",
@@ -51,8 +52,9 @@ export const DEFAULT_POOL_ITEMS: PoolItem[] = [
 ];
 
 export const DEFAULT_GOOGLE_CONFIG: GoogleSyncConfig = {
-  clientId: "",
+  clientId: DEFAULT_GOOGLE_CLIENT_ID,
   isConnected: false,
+  userEmail: "jeihanm@gmail.com",
   autoSync: false,
 };
 

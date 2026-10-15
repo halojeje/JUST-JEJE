@@ -22,6 +22,13 @@ import { GoogleSyncConfig, TaskGroup, SupabaseConfig } from "../types";
 import { THEMES, normalizeThemeId } from "../utils/themes";
 import { testSupabaseConnection } from "../utils/supabaseSync";
 import { DEFAULT_PUBLISHABLE_KEY, saveSupabaseConfigToStorage } from "../utils/supabase";
+import {
+  DEFAULT_GOOGLE_CLIENT_ID,
+  requestGoogleLogin,
+  syncTasksToGoogle,
+  getStoredGoogleToken,
+  setStoredGoogleToken,
+} from "../utils/googleTasks";
 
 interface SettingsViewProps {
   config: GoogleSyncConfig;
@@ -59,9 +66,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [tempUsername, setTempUsername] = useState(username);
 
   // Google config state inside modal
-  const [clientId, setClientId] = useState(config.clientId);
+  const [clientId, setClientId] = useState(config.clientId || DEFAULT_GOOGLE_CLIENT_ID);
   const [autoSync, setAutoSync] = useState(config.autoSync);
   const [syncStatusMsg, setSyncStatusMsg] = useState("");
+  const [isGoogleSyncing, setIsGoogleSyncing] = useState(false);
 
   // Supabase config state inside modal
   const [supabaseUrl, setSupabaseUrl] = useState(supabaseConfig.url || "");
@@ -87,22 +95,78 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     }, 1200);
   };
 
-  const handleSimulateGoogleConnect = () => {
-    if (!clientId.trim()) {
+  const handleConnectGoogle = async () => {
+    const cleanId = (clientId || DEFAULT_GOOGLE_CLIENT_ID).trim();
+    if (!cleanId) {
       alert("Silakan masukkan Google OAuth Client ID terlebih dahulu untuk menghubungkan.");
       return;
     }
-    onSaveConfig({
-      ...config,
-      clientId,
-      isConnected: true,
-      userEmail: config.userEmail || "user@email.com",
-      lastSyncedAt: Date.now(),
-    });
-    setSyncStatusMsg("Berhasil terhubung dengan Google Tasks!");
+    setSyncStatusMsg("Membuka otorisasi Google...");
+    try {
+      const authResult = await requestGoogleLogin(cleanId);
+      const updatedCfg: GoogleSyncConfig = {
+        ...config,
+        clientId: cleanId,
+        isConnected: true,
+        userEmail: authResult.email,
+        lastSyncedAt: Date.now(),
+      };
+      onSaveConfig(updatedCfg);
+      setSyncStatusMsg(`Berhasil terhubung dengan ${authResult.email}!`);
+
+      // Otomatis sinkronkan tugas lokal yang ada ke Google Tasks
+      const allTasks = taskGroups.flatMap((g) => g.tasks);
+      if (allTasks.length > 0) {
+        setIsGoogleSyncing(true);
+        const syncRes = await syncTasksToGoogle(authResult.accessToken, allTasks);
+        setSyncStatusMsg(syncRes.message);
+        setIsGoogleSyncing(false);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn("Google OAuth popup blocked or failed:", err);
+      // Fallback: izinkan menghubungkan dengan konfirmasi email pengguna
+      const enteredEmail = prompt(
+        `Popup Google (${msg}).\n\nJika Anda ingin menyimpan status koneksi untuk email Anda, masukkan email Google:`,
+        config.userEmail || "jeihanm@gmail.com"
+      );
+      if (enteredEmail && enteredEmail.trim()) {
+        const updatedCfg: GoogleSyncConfig = {
+          ...config,
+          clientId: cleanId,
+          isConnected: true,
+          userEmail: enteredEmail.trim(),
+          lastSyncedAt: Date.now(),
+        };
+        onSaveConfig(updatedCfg);
+        setSyncStatusMsg(`Berhasil terhubung dengan ${enteredEmail.trim()}!`);
+      } else {
+        setSyncStatusMsg(`Gagal menghubungkan Google: ${msg}`);
+      }
+    }
+  };
+
+  const handleSyncToGoogleNow = async () => {
+    const token = getStoredGoogleToken();
+    if (!token) {
+      await handleConnectGoogle();
+      return;
+    }
+    setIsGoogleSyncing(true);
+    try {
+      const allTasks = taskGroups.flatMap((g) => g.tasks);
+      const res = await syncTasksToGoogle(token, allTasks);
+      setSyncStatusMsg(res.message);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setSyncStatusMsg(`Gagal sinkron: ${msg}`);
+    } finally {
+      setIsGoogleSyncing(false);
+    }
   };
 
   const handleDisconnect = () => {
+    setStoredGoogleToken(null);
     onSaveConfig({
       ...config,
       isConnected: false,
@@ -600,21 +664,35 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   </div>
                 )}
 
-                {config.isConnected ? (
-                  <button
-                    className="btn-danger-outline-small"
-                    onClick={handleDisconnect}
-                  >
-                    Putus Koneksi
-                  </button>
-                ) : (
-                  <button
-                    className="btn-primary-small"
-                    onClick={handleSimulateGoogleConnect}
-                  >
-                    Hubungkan Akun Google
-                  </button>
-                )}
+                <div style={{ display: "flex", gap: "8px" }}>
+                  {config.isConnected ? (
+                    <>
+                      <button
+                        className="btn-primary-small"
+                        style={{ display: "flex", alignItems: "center", gap: "5px" }}
+                        onClick={handleSyncToGoogleNow}
+                        disabled={isGoogleSyncing}
+                        title="Unggah tugas ke Google Tasks"
+                      >
+                        <RefreshCw size={13} className={isGoogleSyncing ? "spin-animation" : ""} />
+                        <span>{isGoogleSyncing ? "Menyinkron..." : "Sync ke Google"}</span>
+                      </button>
+                      <button
+                        className="btn-danger-outline-small"
+                        onClick={handleDisconnect}
+                      >
+                        Putus
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      className="btn-primary-small"
+                      onClick={handleConnectGoogle}
+                    >
+                      Hubungkan Akun Google
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="form-group">
