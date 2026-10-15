@@ -1,5 +1,5 @@
 import { TaskGroup, PoolItem, GoogleSyncConfig, SupabaseConfig } from "../types";
-import { DEFAULT_PUBLISHABLE_KEY } from "./supabase";
+import { DEFAULT_PUBLISHABLE_KEY, DEFAULT_SUPABASE_URL } from "./supabase";
 
 const STORAGE_KEYS = {
   TASK_GROUPS: "just_jeje_task_groups",
@@ -117,9 +117,9 @@ export function saveGoogleConfig(config: GoogleSyncConfig): void {
 }
 
 export const DEFAULT_SUPABASE_CONFIG: SupabaseConfig = {
-  url: import.meta.env.VITE_SUPABASE_URL || "",
+  url: import.meta.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL,
   publishableKey: import.meta.env.VITE_SUPABASE_ANON_KEY || DEFAULT_PUBLISHABLE_KEY,
-  isConnected: false,
+  isConnected: true,
   autoSync: true,
 };
 

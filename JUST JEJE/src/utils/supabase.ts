@@ -2,12 +2,13 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { SupabaseConfig } from "../types";
 
 export const DEFAULT_PUBLISHABLE_KEY = "sb_publishable_OzVTIo6VWy75OToG4rOZfw_PQZZxP7Z";
+export const DEFAULT_SUPABASE_URL = "https://vfkxwjjcdbbhtnxwaxqt.supabase.co";
 
 let supabaseInstance: SupabaseClient | null = null;
 let currentConfig: SupabaseConfig = {
-  url: import.meta.env.VITE_SUPABASE_URL || "",
+  url: import.meta.env.VITE_SUPABASE_URL || DEFAULT_SUPABASE_URL,
   publishableKey: import.meta.env.VITE_SUPABASE_ANON_KEY || DEFAULT_PUBLISHABLE_KEY,
-  isConnected: false,
+  isConnected: true,
   autoSync: true,
 };
 
