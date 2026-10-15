@@ -14,6 +14,7 @@ import {
   User,
 } from "lucide-react";
 import { GoogleSyncConfig, TaskGroup } from "../types";
+import { THEMES, normalizeThemeId, getThemeById } from "../utils/themes";
 
 interface SettingsViewProps {
   config: GoogleSyncConfig;
@@ -201,24 +202,79 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </div>
 
-      {/* 5. Change Theme Card */}
-      <div className="menu-card menu-card-theme">
-        <div className="menu-card-left">
-          <Palette size={18} className="menu-card-icon" />
-          <span className="menu-card-text">Change Theme</span>
+      {/* 5. Change Theme Card & Visual Theme Preset Grid (fuckUniversity style) */}
+      <div className="menu-card menu-card-theme-expand">
+        <div className="menu-card-theme-header">
+          <div className="menu-card-left">
+            <Palette size={18} className="menu-card-icon" />
+            <span className="menu-card-text">Change Theme</span>
+          </div>
+          <div className="theme-select-wrapper">
+            <select
+              className="theme-dropdown"
+              value={normalizeThemeId(currentTheme)}
+              onChange={(e) => onThemeChange(e.target.value)}
+            >
+              {THEMES.map((th) => (
+                <option key={th.id} value={th.id}>
+                  {th.icon} {th.name}
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={16} className="theme-select-arrow" />
+          </div>
         </div>
-        <div className="theme-select-wrapper">
-          <select
-            className="theme-dropdown"
-            value={currentTheme}
-            onChange={(e) => onThemeChange(e.target.value)}
-          >
-            <option value="Basic Baby Blue">Basic Baby Blue</option>
-            <option value="Pastel Lavender">Pastel Lavender</option>
-            <option value="Emerald Mint">Emerald Mint</option>
-            <option value="Dark Mode">Dark Mode</option>
-          </select>
-          <ChevronDown size={16} className="theme-select-arrow" />
+
+        {/* Live Preset Preview Cards */}
+        <div className="theme-preset-grid">
+          {THEMES.map((th) => {
+            const isSelected = normalizeThemeId(currentTheme) === th.id;
+            return (
+              <button
+                key={th.id}
+                type="button"
+                className={`theme-preset-card ${isSelected ? "selected" : ""}`}
+                onClick={() => onThemeChange(th.id)}
+                title={`${th.name} - ${th.description}`}
+              >
+                <div
+                  className={`theme-preset-preview ${th.pattern !== "none" ? `pattern-${th.pattern}` : ""}`}
+                  style={{
+                    backgroundColor: th.bg,
+                  }}
+                >
+                  <div
+                    className="theme-preset-panel"
+                    style={{ backgroundColor: th.panel }}
+                  >
+                    <span
+                      className="theme-preset-dot"
+                      style={{ backgroundColor: th.logo }}
+                    />
+                  </div>
+                  <div className="theme-preset-chips">
+                    {th.covers.slice(0, 3).map((col, idx) => (
+                      <span
+                        key={idx}
+                        className="theme-preset-chip"
+                        style={{ backgroundColor: col }}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div className="theme-preset-info">
+                  <span className="theme-preset-icon">{th.icon}</span>
+                  <span className="theme-preset-name">{th.name}</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Active Theme Description Banner */}
+        <div className="theme-active-desc">
+          <span className="theme-active-desc-icon">{getThemeById(currentTheme).icon}</span>
+          <span>{getThemeById(currentTheme).description}</span>
         </div>
       </div>
 

@@ -39,12 +39,17 @@
 body {
   font-family: var(--font-family);
   background-color: var(--bg-app);
+  background-image: var(--bg-img, none);
+  background-size: var(--bg-size, auto);
+  background-position: var(--bg-pos, 0 0);
+  background-repeat: repeat;
   color: var(--text-primary);
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: flex-start;
   overflow-x: hidden;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 /* App Shell & Mobile Canvas (Scales beautifully on Desktop window and Phone) */
@@ -53,14 +58,19 @@ body {
   min-height: 100vh;
   display: flex;
   justify-content: center;
-  background-color: var(--bg-app);
+  background-color: transparent;
+  background-image: var(--bg-img, none);
+  background-size: var(--bg-size, auto);
+  background-position: var(--bg-pos, 0 0);
+  background-repeat: repeat;
+  transition: background-color 0.25s ease;
 }
 
 .mobile-canvas {
   width: 100%;
   max-width: 440px;
   min-height: 100vh;
-  background-color: var(--bg-app);
+  background-color: transparent;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -1449,43 +1459,404 @@ body {
 }
 
 /* ==========================================================================
-   Theme Support
+   Theme Support (Exact match to https://tbdtbdp0.github.io/fuckUniversity/#/)
    ========================================================================== */
-[data-theme="pastel-lavender"] {
-  --bg-app: #f5f3ff;
-  --primary-blue: #7c3aed;
-  --primary-blue-hover: #6d28d9;
-  --primary-blue-light: #ede9fe;
+
+/* Pattern Utilities for Previews and Backgrounds */
+.pattern-grid {
+  background-image: linear-gradient(#bcd7f5 1px, transparent 1px), linear-gradient(90deg, #bcd7f5 1px, transparent 1px) !important;
+  background-size: 44px 44px !important;
 }
 
-[data-theme="emerald-mint"] {
-  --bg-app: #f0fdf4;
-  --primary-blue: #059669;
-  --primary-blue-hover: #047857;
+.pattern-check {
+  background-image: linear-gradient(90deg, rgba(245, 169, 158, 0.4) 50%, transparent 50%), linear-gradient(rgba(245, 169, 158, 0.4) 50%, transparent 50%) !important;
+  background-size: 72px 72px !important;
+}
+
+.pattern-dot {
+  background-image: radial-gradient(#7b5544 3px, transparent 3.6px), radial-gradient(#7b5544 3px, transparent 3.6px) !important;
+  background-size: 56px 56px !important;
+  background-position: 0 0, 28px 28px !important;
+}
+
+.pattern-star {
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22130%22%20height%3D%22130%22%3E%3Cpath%20transform%3D%22translate(14%2014)%20scale(0.85)%22%20d%3D%22M10%201.5l2.6%205.4%205.9.8-4.3%204.1%201%205.8L10%2014.8%204.8%2017.6l1-5.8L1.5%207.7l5.9-.8z%22%20fill%3D%22%23353d6e%22%2F%3E%3Cpath%20transform%3D%22translate(82%2076)%20scale(0.65)%22%20d%3D%22M10%201.5l2.6%205.4%205.9.8-4.3%204.1%201%205.8L10%2014.8%204.8%2017.6l1-5.8L1.5%207.7l5.9-.8z%22%20fill%3D%22%23353d6e%22%2F%3E%3C%2Fsvg%3E") !important;
+  background-size: 130px 130px !important;
+}
+
+.pattern-spook {
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22150%22%20height%3D%22150%22%3E%3Cpath%20transform%3D%22translate(14%2018)%20scale(1.1)%22%20d%3D%22M20%208c-2-4-8-6-13-4%203%202%204%205%203%208-3-2-7-2-10%200%204%201%207%204%208%209%203-3%208-3%2010%200%201-3%201-5%202-5s1%202%202%205c2-3%207-3%2010%200%201-5%204-8%208-9-3-2-7-2-10%200-1-3%200-6%203-8-5-2-11%200-13%204z%22%20fill%3D%22%234a3d60%22%2F%3E%3Cpath%20transform%3D%22translate(92%2092)%20scale(0.8)%22%20d%3D%22M20%208c-2-4-8-6-13-4%203%202%204%205%203%208-3-2-7-2-10%200%204%201%207%204%208%209%203-3%208-3%2010%200%201-3%201-5%202-5s1%202%202%205c2-3%207-3%2010%200%201-5%204-8%208-9-3-2-7-2-10%200-1-3%200-6%203-8-5-2-11%200-13%204z%22%20fill%3D%22%234a3d60%22%2F%3E%3Ccircle%20cx%3D%22110%22%20cy%3D%2230%22%20r%3D%222.5%22%20fill%3D%22%234a3d60%22%2F%3E%3Ccircle%20cx%3D%2240%22%20cy%3D%22112%22%20r%3D%222%22%20fill%3D%22%234a3d60%22%2F%3E%3Ccircle%20cx%3D%2272%22%20cy%3D%2262%22%20r%3D%221.5%22%20fill%3D%22%234a3d60%22%2F%3E%3C%2Fsvg%3E") !important;
+  background-size: 150px 150px !important;
+}
+
+/* 1. Basic */
+:root,
+[data-theme="basic"],
+body[data-theme="basic"] {
+  --bg-app: #f1efe9;
+  --bg-card: #fbfaf7;
+  --bg-img: none;
+  --bg-size: auto;
+  --bg-pos: 0 0;
+  --primary-blue: #4f5bd5;
+  --primary-blue-hover: #3e49bf;
+  --primary-blue-light: #eceefd;
+  --text-primary: #1f2328;
+  --text-secondary: #4b5563;
+  --text-muted: #7a7f87;
+  --border-light: #e2dfd7;
+  --border-card: #e2dfd7;
+  --shadow-fab: 0 8px 24px rgba(79, 91, 213, 0.35);
+}
+
+/* 2. Neat */
+[data-theme="neat"],
+body[data-theme="neat"] {
+  --bg-app: #eeeeee;
+  --bg-card: #fafafa;
+  --bg-img: none;
+  --bg-size: auto;
+  --bg-pos: 0 0;
+  --primary-blue: #222222;
+  --primary-blue-hover: #000000;
+  --primary-blue-light: #e5e5e5;
+  --text-primary: #1f2328;
+  --text-secondary: #4b5563;
+  --text-muted: #7a7f87;
+  --border-light: #dedede;
+  --border-card: #dedede;
+  --shadow-fab: 0 8px 24px rgba(34, 34, 34, 0.35);
+}
+
+/* 3. Cute */
+[data-theme="cute"],
+body[data-theme="cute"] {
+  --bg-app: #fdf2f7;
+  --bg-card: #eef6ff;
+  --bg-img: linear-gradient(#bcd7f5 1px, transparent 1px), linear-gradient(90deg, #bcd7f5 1px, transparent 1px);
+  --bg-size: 44px 44px;
+  --bg-pos: 0 0;
+  --primary-blue: #ec4899;
+  --primary-blue-hover: #db2777;
+  --primary-blue-light: #fce7f3;
+  --text-primary: #374151;
+  --text-secondary: #4b5563;
+  --text-muted: #8b949e;
+  --border-light: #fad2e1;
+  --border-card: #dbeafe;
+  --shadow-fab: 0 8px 24px rgba(236, 72, 153, 0.4);
+}
+
+/* 4. Picnic */
+[data-theme="picnic"],
+body[data-theme="picnic"] {
+  --bg-app: #fff8dc;
+  --bg-card: #f1f9e8;
+  --bg-img: linear-gradient(90deg, rgba(245, 169, 158, 0.4) 50%, transparent 50%), linear-gradient(rgba(245, 169, 158, 0.4) 50%, transparent 50%);
+  --bg-size: 72px 72px;
+  --bg-pos: 0 0;
+  --primary-blue: #f08a7e;
+  --primary-blue-hover: #d97064;
+  --primary-blue-light: #ffedea;
+  --text-primary: #2c3327;
+  --text-secondary: #515b49;
+  --text-muted: #7d8774;
+  --border-light: #ecd9b4;
+  --border-card: #ddebd2;
+  --shadow-fab: 0 8px 24px rgba(240, 138, 126, 0.4);
+}
+
+/* 5. Mint Chocolate */
+[data-theme="mint-chocolate"],
+body[data-theme="mint-chocolate"] {
+  --bg-app: #dff3ec;
+  --bg-card: #f3fbf8;
+  --bg-img: radial-gradient(#7b5544 3px, transparent 3.6px), radial-gradient(#7b5544 3px, transparent 3.6px);
+  --bg-size: 56px 56px;
+  --bg-pos: 0 0, 28px 28px;
+  --primary-blue: #3eb489;
+  --primary-blue-hover: #2e9e7a;
   --primary-blue-light: #d1fae5;
+  --text-primary: #26322b;
+  --text-secondary: #45564c;
+  --text-muted: #73857b;
+  --border-light: #bcdfd3;
+  --border-card: #cdeae0;
+  --shadow-fab: 0 8px 24px rgba(62, 180, 137, 0.4);
 }
 
-[data-theme="dark-mode"] {
-  --bg-app: #0f172a;
-  --bg-card: #1e293b;
-  --text-primary: #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-muted: #64748b;
-  --border-light: #334155;
-  --border-card: #334155;
+/* 6. Dreamland */
+[data-theme="dreamland"],
+body[data-theme="dreamland"] {
+  --bg-app: #151a30;
+  --bg-card: #1d2340;
+  --bg-img: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22130%22%20height%3D%22130%22%3E%3Cpath%20transform%3D%22translate(14%2014)%20scale(0.85)%22%20d%3D%22M10%201.5l2.6%205.4%205.9.8-4.3%204.1%201%205.8L10%2014.8%204.8%2017.6l1-5.8L1.5%207.7l5.9-.8z%22%20fill%3D%22%23353d6e%22%2F%3E%3Cpath%20transform%3D%22translate(82%2076)%20scale(0.65)%22%20d%3D%22M10%201.5l2.6%205.4%205.9.8-4.3%204.1%201%205.8L10%2014.8%204.8%2017.6l1-5.8L1.5%207.7l5.9-.8z%22%20fill%3D%22%23353d6e%22%2F%3E%3C%2Fsvg%3E");
+  --bg-size: 130px 130px;
+  --bg-pos: 0 0;
+  --primary-blue: #9fa8ff;
+  --primary-blue-hover: #b4bcff;
+  --primary-blue-light: rgba(159, 168, 255, 0.16);
+  --text-primary: #e4e7f5;
+  --text-secondary: #9aa1bf;
+  --text-muted: #6b7294;
+  --border-light: #2e3456;
+  --border-card: #2e3456;
+  --shadow-fab: 0 8px 24px rgba(159, 168, 255, 0.35);
 }
 
-[data-theme="dark-mode"] .theme-dropdown {
-  border-color: #ffffff;
+/* 7. Halloween */
+[data-theme="halloween"],
+body[data-theme="halloween"] {
+  --bg-app: #2b2238;
+  --bg-card: #211a2c;
+  --bg-img: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22150%22%20height%3D%22150%22%3E%3Cpath%20transform%3D%22translate(14%2018)%20scale(1.1)%22%20d%3D%22M20%208c-2-4-8-6-13-4%203%202%204%205%203%208-3-2-7-2-10%200%204%201%207%204%208%209%203-3%208-3%2010%200%201-3%201-5%202-5s1%202%202%205c2-3%207-3%2010%200%201-5%204-8%208-9-3-2-7-2-10%200-1-3%200-6%203-8-5-2-11%200-13%204z%22%20fill%3D%22%234a3d60%22%2F%3E%3Cpath%20transform%3D%22translate(92%2092)%20scale(0.8)%22%20d%3D%22M20%208c-2-4-8-6-13-4%203%202%204%205%203%208-3-2-7-2-10%200%204%201%207%204%208%209%203-3%208-3%2010%200%201-3%201-5%202-5s1%202%202%205c2-3%207-3%2010%200%201-5%204-8%208-9-3-2-7-2-10%200-1-3%200-6%203-8-5-2-11%200-13%204z%22%20fill%3D%22%234a3d60%22%2F%3E%3Ccircle%20cx%3D%22110%22%20cy%3D%2230%22%20r%3D%222.5%22%20fill%3D%22%234a3d60%22%2F%3E%3Ccircle%20cx%3D%2240%22%20cy%3D%22112%22%20r%3D%222%22%20fill%3D%22%234a3d60%22%2F%3E%3Ccircle%20cx%3D%2272%22%20cy%3D%2262%22%20r%3D%221.5%22%20fill%3D%22%234a3d60%22%2F%3E%3C%2Fsvg%3E");
+  --bg-size: 150px 150px;
+  --bg-pos: 0 0;
+  --primary-blue: #ff8a1f;
+  --primary-blue-hover: #e6750e;
+  --primary-blue-light: rgba(255, 138, 31, 0.16);
+  --text-primary: #f3e8f8;
+  --text-secondary: #bdaec9;
+  --text-muted: #7e6d8c;
+  --border-light: #47395c;
+  --border-card: #3d2f50;
+  --shadow-fab: 0 8px 24px rgba(255, 138, 31, 0.4);
+}
+
+/* ==========================================================================
+   Dark Themes Fine-Tuning (Dreamland & Halloween)
+   ========================================================================== */
+[data-theme="dreamland"] .theme-dropdown,
+[data-theme="halloween"] .theme-dropdown {
+  border-color: var(--border-card);
+  color: var(--text-primary);
+  background-color: var(--bg-card);
+}
+
+[data-theme="dreamland"] .theme-select-arrow,
+[data-theme="halloween"] .theme-select-arrow {
+  color: var(--text-primary);
+}
+
+[data-theme="dreamland"] .btn-logout {
+  background-color: #5c6bc0;
   color: #ffffff;
 }
 
-[data-theme="dark-mode"] .theme-select-arrow {
-  color: #ffffff;
+[data-theme="halloween"] .btn-logout {
+  background-color: #ff8a1f;
+  color: #1a1522;
 }
 
-[data-theme="dark-mode"] .btn-logout {
-  background-color: #3b82f6;
+[data-theme="dreamland"] .task-checkbox,
+[data-theme="halloween"] .task-checkbox {
+  border-color: var(--text-muted);
+}
+
+[data-theme="dreamland"] .task-checkbox.checked,
+[data-theme="halloween"] .task-checkbox.checked {
+  background-color: var(--primary-blue);
+  border-color: var(--primary-blue);
+}
+
+[data-theme="dreamland"] .task-item-card.task-completed,
+[data-theme="halloween"] .task-item-card.task-completed {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--border-card);
+}
+
+[data-theme="dreamland"] .task-empty-state,
+[data-theme="halloween"] .task-empty-state {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: var(--border-card);
+}
+
+[data-theme="dreamland"] .task-input,
+[data-theme="halloween"] .task-input,
+[data-theme="dreamland"] .modal-input,
+[data-theme="halloween"] .modal-input,
+[data-theme="dreamland"] .profile-name-input,
+[data-theme="halloween"] .profile-name-input,
+[data-theme="dreamland"] .title-edit-input,
+[data-theme="halloween"] .title-edit-input,
+[data-theme="dreamland"] .pool-inline-input,
+[data-theme="halloween"] .pool-inline-input {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  border-color: var(--border-card);
+}
+
+[data-theme="dreamland"] .modal-content,
+[data-theme="halloween"] .modal-content {
+  background: var(--bg-card);
+  border-color: var(--border-card);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dreamland"] .dropdown-menu,
+[data-theme="halloween"] .dropdown-menu,
+[data-theme="dreamland"] .tag-dropdown-menu,
+[data-theme="halloween"] .tag-dropdown-menu {
+  background: var(--bg-card);
+  border-color: var(--border-card);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dreamland"] .dropdown-item:hover,
+[data-theme="halloween"] .dropdown-item:hover,
+[data-theme="dreamland"] .tag-dropdown-item:hover,
+[data-theme="halloween"] .tag-dropdown-item:hover {
+  background: var(--primary-blue-light);
+}
+
+[data-theme="dreamland"] .desktop-sync-stats,
+[data-theme="halloween"] .desktop-sync-stats {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dreamland"] .btn-tag-option-small,
+[data-theme="halloween"] .btn-tag-option-small {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--border-card);
+}
+
+/* ==========================================================================
+   Visual Theme Preset Selector Cards (Settings Page)
+   ========================================================================== */
+.menu-card-theme-expand {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  cursor: default;
+}
+
+.menu-card-theme-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.theme-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(115px, 1fr));
+  gap: 10px;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.theme-preset-card {
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-light);
+  border-radius: 12px;
+  padding: 8px 7px 9px 7px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: center;
+  font-family: inherit;
+  color: var(--text-primary);
+}
+
+.theme-preset-card:hover {
+  border-color: var(--primary-blue);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.theme-preset-card.selected {
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 2px var(--primary-blue), 0 4px 12px rgba(0, 0, 0, 0.08);
+  background: var(--bg-card);
+}
+
+.theme-preset-preview {
+  width: 100%;
+  height: 52px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  position: relative;
+}
+
+.theme-preset-panel {
+  width: 32%;
+  height: 100%;
+  border-right: 1px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 8px;
+}
+
+.theme-preset-dot {
+  width: 10px;
+  height: 12px;
+  border-radius: 2px 4px 4px 2px;
+  box-shadow: inset 2px 0 0 rgba(0, 0, 0, 0.15);
+}
+
+.theme-preset-chips {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 4px;
+}
+
+.theme-preset-chip {
+  width: 14px;
+  height: 20px;
+  border-radius: 2px 4px 4px 2px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+.theme-preset-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.theme-preset-icon {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.theme-preset-name {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.theme-active-desc {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--primary-blue-light);
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-top: 4px;
+  width: 100%;
+}
+
+.theme-active-desc-icon {
+  font-size: 16px;
+  flex-shrink: 0;
 }
 
 /* ==========================================================================

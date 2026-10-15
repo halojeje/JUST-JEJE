@@ -10,6 +10,7 @@ import {
   DEFAULT_TASK_GROUPS,
   DEFAULT_POOL_ITEMS,
 } from "./utils/storage";
+import { normalizeThemeId } from "./utils/themes";
 import { Header } from "./components/Header";
 import { TaskCard } from "./components/TaskCard";
 import { GenerateView } from "./components/GenerateView";
@@ -29,7 +30,7 @@ function App() {
     return localStorage.getItem("just_jeje_username") || "Username";
   });
   const [currentTheme, setCurrentTheme] = useState<string>(() => {
-    return localStorage.getItem("just_jeje_theme") || "Basic Baby Blue";
+    return normalizeThemeId(localStorage.getItem("just_jeje_theme") || "basic");
   });
 
   const [isAddIdeaOpen, setIsAddIdeaOpen] = useState(false);
@@ -42,7 +43,10 @@ function App() {
   }, [username]);
 
   useEffect(() => {
-    localStorage.setItem("just_jeje_theme", currentTheme);
+    const themeId = normalizeThemeId(currentTheme);
+    localStorage.setItem("just_jeje_theme", themeId);
+    document.documentElement.setAttribute("data-theme", themeId);
+    document.body.setAttribute("data-theme", themeId);
   }, [currentTheme]);
 
   // Synchronize with LocalStorage
@@ -211,7 +215,7 @@ function App() {
   return (
     <div
       className="app-shell"
-      data-theme={currentTheme.toLowerCase().replace(/\s+/g, "-")}
+      data-theme={normalizeThemeId(currentTheme)}
     >
       <div className="mobile-canvas">
         {/* Top Header (Hidden automatically on Settings view) */}
