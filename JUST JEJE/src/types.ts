@@ -1,0 +1,28 @@
+export interface Task {
+  id: string;
+  text: string;
+  completed: boolean;
+  createdAt: number;
+  googleTaskId?: string;
+}
+
+export interface TaskGroup {
+  id: string;
+  title: string;
+  tasks: Task[];
+}
+
+export interface PoolItem {
+  id: string;
+  text: string;
+  category?: string;
+  createdAt: number;
+}
+
+export interface GoogleSyncConfig {
+  clientId: string;
+  isConnected: boolean;
+  userEmail?: string;
+  autoSync: boolean;
+  lastSyncedAt?: number;
+}
