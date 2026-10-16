@@ -62,7 +62,7 @@ export const GenerateView: React.FC<GenerateViewProps> = ({
           <div className="generator-card-title-row">
             <div className="generator-card-title-left">
               <Sparkles size={18} className="generator-title-icon" />
-              <h2 className="generator-card-title">Bank Ide (Pool)</h2>
+              <h2 className="generator-card-title">Bank Idea</h2>
               <span className="generator-badge-count">{poolItems.length} ide</span>
             </div>
             <button

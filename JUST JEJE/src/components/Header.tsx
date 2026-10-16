@@ -56,8 +56,8 @@ export const Header: React.FC<HeaderProps> = ({
             <ChevronLeft size={24} color="#1e88e5" strokeWidth={2.4} />
           </button>
 
-          {/* Center Title: Generate */}
-          <h1 className="header-title">Generate</h1>
+          {/* Center Title: Bank Idea */}
+          <h1 className="header-title">Bank Idea</h1>
 
           {/* Empty spacer to keep title perfectly centered */}
           <div className="header-spacer" />
