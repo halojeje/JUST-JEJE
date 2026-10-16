@@ -37,18 +37,6 @@ export const DEFAULT_POOL_ITEMS: PoolItem[] = [
     category: "Anabul & Santai",
     createdAt: Date.now() - 3600000,
   },
-  {
-    id: "pool-3",
-    text: "Review materi kuliah / riset artikel",
-    category: "Belajar",
-    createdAt: Date.now() - 1800000,
-  },
-  {
-    id: "pool-4",
-    text: "Stretching & minum air putih 1 botol",
-    category: "Olahraga",
-    createdAt: Date.now() - 900000,
-  },
 ];
 
 export const DEFAULT_GOOGLE_CONFIG: GoogleSyncConfig = {

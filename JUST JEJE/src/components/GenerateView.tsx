@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { PoolItem } from "../types";
-import { MoreVertical, Trash2, Edit2, SendHorizontal, Sparkles } from "lucide-react";
+import { MoreVertical, Trash2, Edit2, SendHorizontal } from "lucide-react";
 
 interface GenerateViewProps {
   poolItems: PoolItem[];
@@ -38,13 +38,6 @@ export const GenerateView: React.FC<GenerateViewProps> = ({
 
   return (
     <div className="generate-view-container">
-      <div className="pool-info-banner">
-        <Sparkles size={16} className="sparkle-icon" />
-        <span>
-          Semua ide di bawah ini akan diacak saat Anda klik <strong>Generate</strong> di Dashboard!
-        </span>
-      </div>
-
       <div className="pool-list">
         {poolItems.length === 0 ? (
           <div className="pool-empty-card">
@@ -86,17 +79,13 @@ export const GenerateView: React.FC<GenerateViewProps> = ({
                   </button>
                 </div>
               ) : (
-                <div className="pool-item-content">
-                  <span className="pool-item-text">{item.text}</span>
-                  {item.category && (
-                    <span className="pool-item-badge">{item.category}</span>
-                  )}
-                </div>
+                <span className="pool-item-text">{item.text}</span>
               )}
 
               {/* Three dots menu */}
               <div className="task-menu-wrapper">
                 <button
+                  type="button"
                   className="icon-action-btn pool-menu-btn"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -104,7 +93,7 @@ export const GenerateView: React.FC<GenerateViewProps> = ({
                   }}
                   title="Menu aksi"
                 >
-                  <MoreVertical size={18} />
+                  <MoreVertical size={20} color="#111827" />
                 </button>
 
                 {activeMenuId === item.id && (
@@ -113,6 +102,7 @@ export const GenerateView: React.FC<GenerateViewProps> = ({
                     onClick={(e) => e.stopPropagation()}
                   >
                     <button
+                      type="button"
                       className="dropdown-item"
                       onClick={() => {
                         onSendToDashboard(item.text);
@@ -123,6 +113,7 @@ export const GenerateView: React.FC<GenerateViewProps> = ({
                       <span>Kirim ke To-Do Hari Ini</span>
                     </button>
                     <button
+                      type="button"
                       className="dropdown-item"
                       onClick={() => handleStartEdit(item)}
                     >
@@ -130,6 +121,7 @@ export const GenerateView: React.FC<GenerateViewProps> = ({
                       <span>Edit Teks</span>
                     </button>
                     <button
+                      type="button"
                       className="dropdown-item dropdown-item-danger"
                       onClick={() => {
                         onDeletePoolItem(item.id);

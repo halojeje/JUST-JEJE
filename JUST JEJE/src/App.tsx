@@ -24,11 +24,15 @@ import { GenerateView } from "./components/GenerateView";
 import { SettingsView } from "./components/SettingsView";
 import { AddIdeaModal } from "./components/AddIdeaModal";
 import { AddTaskModal } from "./components/AddTaskModal";
+import { WidgetTopBar } from "./components/WidgetTopBar";
+import { CompactWidgetView } from "./components/CompactWidgetView";
+import { resizeWindow, isTauri } from "./utils/tauriWindow";
 import { Plus } from "lucide-react";
 import "./App.css";
 
 function App() {
   const [currentView, setCurrentView] = useState<"dashboard" | "generate" | "settings">("dashboard");
+  const [isCompactMode, setIsCompactMode] = useState<boolean>(false);
   const [taskGroups, setTaskGroups] = useState<TaskGroup[]>(loadTaskGroups);
   const [poolItems, setPoolItems] = useState<PoolItem[]>(loadPoolItems);
   const [googleConfig, setGoogleConfig] = useState<GoogleSyncConfig>(loadGoogleConfig);
@@ -278,82 +282,148 @@ function App() {
     showToast(res.message);
   };
 
+  const handleToggleCompactMode = () => {
+    const nextMode = !isCompactMode;
+    setIsCompactMode(nextMode);
+    localStorage.setItem("just_jeje_compact_widget", nextMode ? "1" : "0");
+    if (nextMode) {
+      resizeWindow(340, 520);
+    } else {
+      resizeWindow(380, 640);
+    }
+  };
+
   return (
     <div
-      className="app-shell"
+      className={`app-shell ${isCompactMode ? "mode-compact-shell" : ""}`}
       data-theme={normalizeThemeId(currentTheme)}
     >
-      <div className="mobile-canvas">
-        {/* Top Header (Hidden automatically on Settings view) */}
-        <Header
-          currentView={currentView}
-          onOpenSettings={() => setCurrentView("settings")}
-          onNavigateGenerate={() => setCurrentView("generate")}
-          onNavigateDashboard={() => setCurrentView("dashboard")}
-          onOpenAddIdea={() => setIsAddIdeaOpen(true)}
-        />
+      <div className={`mobile-canvas ${isCompactMode ? "mode-compact-canvas" : ""}`}>
+        {/* Desktop Widget Frameless Bar (Drag, Pin Always-on-top, Compact Toggle, Window buttons) */}
+        {(isTauri() || isCompactMode) && (
+          <WidgetTopBar
+            isCompactMode={isCompactMode}
+            onToggleCompactMode={handleToggleCompactMode}
+            isOnline={supabaseConfig.isConnected}
+          />
+        )}
 
-        {/* Main Content Area */}
-        <main className="content-area">
-          {currentView === "dashboard" && (
-            <div className="dashboard-content">
-              {taskGroups.map((group, index) => (
-                <TaskCard
-                  key={group.id}
-                  group={group}
-                  canDeleteGroup={index > 0}
-                  onDeleteGroup={handleDeleteGroup}
-                  poolItems={poolItems}
-                  onUpdateGroupTitle={handleUpdateGroupTitle}
-                  onAddTask={handleAddTask}
-                  onToggleTask={handleToggleTask}
-                  onDeleteTask={handleDeleteTask}
-                  onEditTask={handleEditTask}
-                  onSaveToPool={handleSaveToPool}
-                  onNavigateGenerate={() => setCurrentView("generate")}
-                />
-              ))}
-
-              {/* Floating Action Button (FAB) at Bottom Right */}
-              <button
-                id="btn-fab-add"
-                className="fab-button"
-                onClick={() => setIsAddTaskOpen(true)}
-                title="Tambah Tugas atau List Baru"
-              >
-                <Plus size={36} strokeWidth={2.4} />
-              </button>
+        {isCompactMode ? (
+          <CompactWidgetView
+            taskGroups={taskGroups}
+            poolItems={poolItems}
+            onAddTask={handleAddTask}
+            onToggleTask={handleToggleTask}
+            onDeleteTask={handleDeleteTask}
+            onNavigateGenerate={() => {
+              setIsCompactMode(false);
+              setCurrentView("generate");
+            }}
+          />
+        ) : (
+          <>
+            {/* Status Bar (09:41, Signal, Battery - as shown in Mockup) */}
+            <div className="status-bar">
+              <span className="status-time">09:41</span>
+              <div className="status-icons">
+                <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor" aria-label="Signal">
+                  <rect x="0" y="9" width="3" height="3" rx="0.5" />
+                  <rect x="4.5" y="6" width="3" height="6" rx="0.5" />
+                  <rect x="9" y="3" width="3" height="9" rx="0.5" />
+                  <rect x="13.5" y="0" width="3" height="12" rx="0.5" />
+                </svg>
+                <svg width="24" height="12" viewBox="0 0 24 12" fill="none" stroke="currentColor" strokeWidth="1.6" aria-label="Battery">
+                  <rect x="1" y="1" width="19" height="10" rx="3" />
+                  <rect x="21" y="4" width="2" height="4" rx="1" fill="currentColor" />
+                  <rect x="3.5" y="3.5" width="12" height="5" rx="1" fill="currentColor" />
+                </svg>
+              </div>
             </div>
-          )}
 
-          {currentView === "generate" && (
-            <GenerateView
-              poolItems={poolItems}
-              onDeletePoolItem={handleDeletePoolItem}
-              onEditPoolItem={handleEditPoolItem}
-              onSendToDashboard={handleSendToDashboard}
+            {/* Top Header (Hidden automatically on Settings view) */}
+            <Header
+              currentView={currentView}
+              onOpenSettings={() => setCurrentView("settings")}
+              onNavigateGenerate={() => setCurrentView("generate")}
+              onNavigateDashboard={() => setCurrentView("dashboard")}
               onOpenAddIdea={() => setIsAddIdeaOpen(true)}
-              onRestoreDefaults={() => setPoolItems(DEFAULT_POOL_ITEMS)}
             />
-          )}
 
-          {currentView === "settings" && (
-            <SettingsView
-              config={googleConfig}
-              onSaveConfig={handleSaveGoogleConfig}
-              supabaseConfig={supabaseConfig}
-              onSaveSupabaseConfig={handleSaveSupabaseConfig}
-              onSyncSupabaseNow={handleSyncSupabaseNow}
-              onResetToDefaults={handleResetToDefaults}
-              onBack={() => setCurrentView("dashboard")}
-              taskGroups={taskGroups}
-              currentTheme={currentTheme}
-              onThemeChange={setCurrentTheme}
-              username={username}
-              onUpdateUsername={setUsername}
-            />
-          )}
-        </main>
+            {/* Main Content Area */}
+            <main className="content-area">
+              {currentView === "dashboard" && (
+                <div className="dashboard-content">
+                  {taskGroups.map((group, index) => (
+                    <TaskCard
+                      key={group.id}
+                      group={group}
+                      canDeleteGroup={index > 0}
+                      onDeleteGroup={handleDeleteGroup}
+                      poolItems={poolItems}
+                      onUpdateGroupTitle={handleUpdateGroupTitle}
+                      onAddTask={handleAddTask}
+                      onToggleTask={handleToggleTask}
+                      onDeleteTask={handleDeleteTask}
+                      onEditTask={handleEditTask}
+                      onSaveToPool={handleSaveToPool}
+                      onNavigateGenerate={() => setCurrentView("generate")}
+                    />
+                  ))}
+
+                  {/* Floating Action Button (FAB) at Bottom Right */}
+                  <button
+                    id="btn-fab-add"
+                    className="fab-button"
+                    onClick={() => setIsAddTaskOpen(true)}
+                    title="Tambah Tugas atau List Baru"
+                  >
+                    <Plus size={38} strokeWidth={2.4} color="#0d47a1" />
+                  </button>
+                </div>
+              )}
+
+              {currentView === "generate" && (
+                <div className="generate-content-wrapper">
+                  <GenerateView
+                    poolItems={poolItems}
+                    onDeletePoolItem={handleDeletePoolItem}
+                    onEditPoolItem={handleEditPoolItem}
+                    onSendToDashboard={handleSendToDashboard}
+                    onOpenAddIdea={() => setIsAddIdeaOpen(true)}
+                    onRestoreDefaults={() => setPoolItems(DEFAULT_POOL_ITEMS)}
+                  />
+
+                  {/* Floating Action Button (FAB) for Generator page as in Mockup 2 */}
+                  <button
+                    id="btn-fab-add-idea"
+                    className="fab-button"
+                    onClick={() => setIsAddIdeaOpen(true)}
+                    title="Tambah Ide ke Pool"
+                  >
+                    <Plus size={38} strokeWidth={2.4} color="#0d47a1" />
+                  </button>
+                </div>
+              )}
+
+              {currentView === "settings" && (
+                <SettingsView
+                  config={googleConfig}
+                  onSaveConfig={handleSaveGoogleConfig}
+                  supabaseConfig={supabaseConfig}
+                  onSaveSupabaseConfig={handleSaveSupabaseConfig}
+                  onSyncSupabaseNow={handleSyncSupabaseNow}
+                  onResetToDefaults={handleResetToDefaults}
+                  onBack={() => setCurrentView("dashboard")}
+                  taskGroups={taskGroups}
+                  currentTheme={currentTheme}
+                  onThemeChange={setCurrentTheme}
+                  username={username}
+                  onUpdateUsername={setUsername}
+                />
+              )}
+            </main>
+          </>
+        )}
 
         {/* Global Toast Notification */}
         {toastMessage && (

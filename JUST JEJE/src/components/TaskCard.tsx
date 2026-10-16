@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { Task, TaskGroup, PoolItem } from "../types";
 import {
   Pencil,
@@ -7,9 +7,6 @@ import {
   Trash2,
   BookmarkPlus,
   Edit2,
-  SlidersHorizontal,
-  X,
-  Tag,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 
@@ -47,29 +44,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   const [activeMenuTaskId, setActiveMenuTaskId] = useState<string | null>(null);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [editTaskText, setEditTaskText] = useState("");
-  
-  // Tag Filter State for Randomize Generator
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [isTagPickerOpen, setIsTagPickerOpen] = useState(false);
-
-  // Extract unique tags/categories from pool items
-  const availableTags = useMemo(() => {
-    const tagsSet = new Set<string>();
-    poolItems.forEach((item) => {
-      if (item.category && item.category.trim()) {
-        tagsSet.add(item.category.trim());
-      }
-    });
-    return Array.from(tagsSet);
-  }, [poolItems]);
-
-  // Close tag picker on click outside
-  React.useEffect(() => {
-    if (!isTagPickerOpen) return;
-    const handleOutsideClick = () => setIsTagPickerOpen(false);
-    window.addEventListener("click", handleOutsideClick);
-    return () => window.removeEventListener("click", handleOutsideClick);
-  }, [isTagPickerOpen]);
 
   const handleTitleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -96,24 +70,15 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       return;
     }
 
-    // Determine candidate pool based on selectedTag
-    const candidatePool = selectedTag
-      ? poolItems.filter((item) => item.category === selectedTag)
-      : poolItems;
+    const candidatePool = poolItems;
 
     // If pool is empty
     if (candidatePool.length === 0) {
-      if (selectedTag) {
-        alert(
-          `Belum ada ide di kategori "${selectedTag}".\n\nSilakan pilih kategori lain atau buka page Generate untuk menambah ide di kategori ini!`
-        );
-      } else {
-        const confirmNav = window.confirm(
-          "Bank ide di page Generate masih kosong!\n\nMau buka page Generate untuk menambah ide tugas sekarang?"
-        );
-        if (confirmNav) {
-          onNavigateGenerate();
-        }
+      const confirmNav = window.confirm(
+        "Bank ide di page Generate masih kosong!\n\nMau buka page Generate untuk menambah ide tugas sekarang?"
+      );
+      if (confirmNav) {
+        onNavigateGenerate();
       }
       return;
     }
@@ -337,25 +302,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         )}
       </div>
 
-      {/* Active Tag Filter Indicator Pill (if a tag is selected) */}
-      {selectedTag && (
-        <div className="active-tag-pill">
-          <Tag size={12} className="tag-pill-icon" />
-          <span className="tag-pill-text">
-            Kategori Acak: <strong>{selectedTag}</strong>
-          </span>
-          <button
-            type="button"
-            className="tag-pill-clear"
-            onClick={() => setSelectedTag(null)}
-            title="Reset ke Semua Tags"
-          >
-            <X size={12} />
-          </button>
-        </div>
-      )}
-
-      {/* Input Row with Input & Generate Actions Cluster */}
+      {/* Input Row with Input & Generate Actions */}
       <form onSubmit={handleManualAdd} className="task-input-card">
         <input
           type="text"
@@ -366,86 +313,15 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           disabled={isGenerating}
         />
 
-        <div className="generate-actions-cluster">
-          {/* Small Option Button to Choose Tag Filter */}
-          <div className="tag-filter-popover-wrapper">
-            <button
-              type="button"
-              className={`btn-tag-option-small ${selectedTag ? "has-active-tag" : ""}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsTagPickerOpen(!isTagPickerOpen);
-              }}
-              title={
-                selectedTag
-                  ? `Filter Tag Aktif: ${selectedTag} (Klik untuk ubah/semua)`
-                  : "Filter Tags untuk Generate Acak"
-              }
-            >
-              <SlidersHorizontal size={14} />
-              {selectedTag && <span className="tag-active-dot" />}
-            </button>
-
-            {/* Dropdown Menu for Tags */}
-            {isTagPickerOpen && (
-              <div
-                className="tag-dropdown-menu"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="tag-dropdown-header">
-                  <span>Pilih Tag Generate</span>
-                </div>
-
-                <button
-                  type="button"
-                  className={`tag-dropdown-item ${selectedTag === null ? "active" : ""}`}
-                  onClick={() => {
-                    setSelectedTag(null);
-                    setIsTagPickerOpen(false);
-                  }}
-                >
-                  <span className="tag-item-bullet">•</span>
-                  <span className="tag-item-label">Semua Tags</span>
-                  <span className="tag-item-count">({poolItems.length})</span>
-                </button>
-
-                {availableTags.map((tag) => {
-                  const count = poolItems.filter((i) => i.category === tag).length;
-                  return (
-                    <button
-                      type="button"
-                      key={tag}
-                      className={`tag-dropdown-item ${selectedTag === tag ? "active" : ""}`}
-                      onClick={() => {
-                        setSelectedTag(tag);
-                        setIsTagPickerOpen(false);
-                      }}
-                    >
-                      <span className="tag-item-bullet">•</span>
-                      <span className="tag-item-label">{tag}</span>
-                      <span className="tag-item-count">({count})</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Generate Button */}
-          <button
-            type="button"
-            className="btn-generate-action"
-            onClick={handleGenerateClick}
-            disabled={isGenerating}
-            title={
-              selectedTag
-                ? `Generate acak dari kategori "${selectedTag}"`
-                : "Generate acak dari semua kategori"
-            }
-          >
-            {isGenerating ? "Picking..." : "Generate"}
-          </button>
-        </div>
+        <button
+          type="button"
+          className="btn-generate-action"
+          onClick={handleGenerateClick}
+          disabled={isGenerating}
+          title="Generate acak dari bank ide"
+        >
+          {isGenerating ? "Picking..." : "Generate"}
+        </button>
       </form>
     </div>
   );

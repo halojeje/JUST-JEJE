@@ -1,0 +1,24 @@
+{
+  "short_name": "JUST JEJE",
+  "name": "JUST JEJE - To-Do & Randomize",
+  "description": "Smart To-Do List & Random Idea Generator with Live Cloud Sync",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#edfbf8",
+  "theme_color": "#1e88e5",
+  "display": "standalone",
+  "orientation": "portrait-primary"
+}
