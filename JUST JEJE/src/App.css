@@ -199,6 +199,7 @@ body {
   flex-direction: column;
   gap: 14px;
   width: 100%;
+  flex: 1;
   box-sizing: border-box;
   padding: 4px 0 24px 0;
 }
@@ -217,10 +218,17 @@ body {
   flex-direction: column;
   gap: 16px;
   width: 100%;
-  min-height: 440px;
+  flex: 1;
+  min-height: calc(100vh - 160px);
   box-sizing: border-box;
   margin-top: 4px;
   transition: all 0.2s ease;
+}
+
+/* If multiple task cards exist on dashboard, let each card size naturally */
+.dashboard-content:has(.task-card-container + .task-card-container) .task-card-container {
+  flex: initial;
+  min-height: 280px;
 }
 
 .task-card-header {
@@ -301,6 +309,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  flex: 1;
 }
 
 .task-empty-state {
@@ -506,6 +515,7 @@ body {
   justify-content: space-between;
   gap: 8px;
   position: relative;
+  margin-top: auto;
 }
 
 .task-input-field {
@@ -717,16 +727,16 @@ body {
 
   .task-card-container,
   .generator-card-container {
-    padding: 18px 14px 20px 14px;
+    padding: 18px 16px 20px 16px;
     border-radius: 18px;
-    min-height: 400px;
+    min-height: calc(100vh - 130px);
   }
 
   .pool-item-card,
   .profile-card,
   .menu-card {
-    padding: 14px 14px;
-    border-radius: 14px;
+    padding: 16px 16px;
+    border-radius: 18px;
   }
 
   .task-item-card {
@@ -755,16 +765,16 @@ body {
 
   .task-card-container,
   .generator-card-container {
-    padding: 16px 12px 18px 12px;
+    padding: 16px 14px 18px 14px;
     border-radius: 16px;
-    min-height: 360px;
+    min-height: calc(100vh - 120px);
   }
 
   .pool-item-card,
   .profile-card,
   .menu-card {
-    padding: 12px 12px;
-    border-radius: 12px;
+    padding: 14px 14px;
+    border-radius: 16px;
   }
 
   .task-item-card {
@@ -817,14 +827,14 @@ body {
   .generator-card-container {
     padding: 24px 22px 26px 22px;
     border-radius: 22px;
-    min-height: 480px;
+    min-height: calc(100vh - 170px);
   }
 
   .pool-item-card,
   .profile-card,
   .menu-card {
-    padding: 18px 22px;
-    border-radius: 18px;
+    padding: 20px 22px;
+    border-radius: 22px;
   }
 
   .fab-button {
@@ -849,6 +859,7 @@ body {
   flex-direction: column;
   gap: 14px;
   width: 100%;
+  flex: 1;
   box-sizing: border-box;
   padding: 4px 0 24px 0;
 }
@@ -858,6 +869,7 @@ body {
   flex-direction: column;
   gap: 14px;
   width: 100%;
+  flex: 1;
   box-sizing: border-box;
 }
 
@@ -1666,6 +1678,8 @@ body {
   flex-direction: column;
   gap: 14px;
   width: 100%;
+  flex: 1;
+  min-height: calc(100vh - 160px);
   box-sizing: border-box;
   padding: 4px 0 24px 0;
   animation: fadeIn 0.2s ease-out;
@@ -1675,7 +1689,7 @@ body {
 .profile-card {
   background: var(--bg-card);
   border-radius: 18px;
-  padding: 16px 18px;
+  padding: 18px 18px;
   display: flex;
   align-items: center;
   gap: 16px;
@@ -1775,8 +1789,8 @@ body {
 /* Menu Option Cards */
 .menu-card {
   background: var(--bg-card);
-  border-radius: 16px;
-  padding: 16px 18px;
+  border-radius: 18px;
+  padding: 18px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1953,9 +1967,9 @@ body {
   background-color: #000000;
   color: #ffffff;
   border: none;
-  border-radius: 16px;
+  border-radius: 18px;
   width: 100%;
-  height: 50px;
+  height: 52px;
   font-size: 16px;
   font-weight: 800;
   letter-spacing: 0.8px;
