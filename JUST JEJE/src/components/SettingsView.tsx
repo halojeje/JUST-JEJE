@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import {
-  ChevronRight,
   Globe,
   CheckCircle2,
   AlertCircle,
@@ -37,7 +36,7 @@ interface SettingsViewProps {
   onSaveSupabaseConfig: (config: SupabaseConfig) => void;
   onSyncSupabaseNow: () => Promise<void>;
   onResetToDefaults: () => void;
-  onBack: () => void;
+  onBack?: () => void;
   taskGroups: TaskGroup[];
   currentTheme: string;
   onThemeChange: (theme: string) => void;
@@ -52,7 +51,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onSaveSupabaseConfig,
   onSyncSupabaseNow,
   onResetToDefaults,
-  onBack,
+  onBack: _onBack,
   taskGroups,
   currentTheme,
   onThemeChange,
@@ -287,19 +286,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   return (
     <div className="settings-view-container">
-      {/* Settings Top Header */}
-      <div className="settings-header">
-        <div className="settings-header-placeholder" />
-        <h1 className="settings-title">Profil</h1>
-        <button
-          className="settings-exit-btn"
-          onClick={onBack}
-          title="Kembali ke Dashboard"
-        >
-          <ChevronRight size={22} />
-        </button>
-      </div>
-
       {/* 1. Profile User Card */}
       <div className="profile-card">
         <div className="avatar-circle">

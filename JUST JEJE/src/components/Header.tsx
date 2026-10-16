@@ -1,5 +1,5 @@
 import React from "react";
-import { Settings, LayoutGrid, ChevronLeft } from "lucide-react";
+import { Settings, LayoutGrid, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface HeaderProps {
   currentView: "dashboard" | "generate" | "settings";
@@ -15,13 +15,9 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigateGenerate,
   onNavigateDashboard,
 }) => {
-  if (currentView === "settings") {
-    return null;
-  }
-
   return (
     <header className="app-header">
-      {currentView === "dashboard" ? (
+      {currentView === "dashboard" && (
         <>
           {/* Settings Button: Blue Outlined Rounded Square */}
           <button
@@ -46,7 +42,9 @@ export const Header: React.FC<HeaderProps> = ({
             <LayoutGrid size={22} color="#1e88e5" strokeWidth={2} />
           </button>
         </>
-      ) : (
+      )}
+
+      {currentView === "generate" && (
         <>
           {/* Back Button: Blue Outlined Rounded Square */}
           <button
@@ -63,6 +61,26 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Empty spacer to keep title perfectly centered */}
           <div className="header-spacer" />
+        </>
+      )}
+
+      {currentView === "settings" && (
+        <>
+          {/* Empty spacer to keep title perfectly centered */}
+          <div className="header-spacer" />
+
+          {/* Center Title: Profil */}
+          <h1 className="header-title">Profil</h1>
+
+          {/* Exit / Back Button: Blue Outlined Rounded Square */}
+          <button
+            id="btn-exit-settings"
+            className="icon-square-btn"
+            onClick={onNavigateDashboard}
+            title="Kembali ke Dashboard"
+          >
+            <ChevronRight size={24} color="#1e88e5" strokeWidth={2.4} />
+          </button>
         </>
       )}
     </header>
