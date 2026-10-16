@@ -322,23 +322,7 @@ function App() {
           />
         ) : (
           <>
-            {/* Status Bar (09:41, Signal, Battery - as shown in Mockup) */}
-            <div className="status-bar">
-              <span className="status-time">09:41</span>
-              <div className="status-icons">
-                <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor" aria-label="Signal">
-                  <rect x="0" y="9" width="3" height="3" rx="0.5" />
-                  <rect x="4.5" y="6" width="3" height="6" rx="0.5" />
-                  <rect x="9" y="3" width="3" height="9" rx="0.5" />
-                  <rect x="13.5" y="0" width="3" height="12" rx="0.5" />
-                </svg>
-                <svg width="24" height="12" viewBox="0 0 24 12" fill="none" stroke="currentColor" strokeWidth="1.6" aria-label="Battery">
-                  <rect x="1" y="1" width="19" height="10" rx="3" />
-                  <rect x="21" y="4" width="2" height="4" rx="1" fill="currentColor" />
-                  <rect x="3.5" y="3.5" width="12" height="5" rx="1" fill="currentColor" />
-                </svg>
-              </div>
-            </div>
+
 
             {/* Top Header (Hidden automatically on Settings view) */}
             <Header
