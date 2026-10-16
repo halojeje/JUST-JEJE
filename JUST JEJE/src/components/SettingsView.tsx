@@ -16,6 +16,7 @@ import {
   RefreshCw,
   Copy,
   Check,
+  ExternalLink,
 } from "lucide-react";
 import { GoogleSyncConfig, TaskGroup, SupabaseConfig } from "../types";
 import { THEMES, normalizeThemeId } from "../utils/themes";
@@ -67,8 +68,26 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   // Google config state inside modal
   const [clientId, setClientId] = useState(config.clientId || DEFAULT_GOOGLE_CLIENT_ID);
   const [autoSync, setAutoSync] = useState(config.autoSync);
-  const [syncStatusMsg, setSyncStatusMsg] = useState("");
+  const [googleStatus, setGoogleStatus] = useState<{
+    type: "success" | "error" | "info";
+    message: string;
+  } | null>(null);
   const [isGoogleSyncing, setIsGoogleSyncing] = useState(false);
+  const [isGoogleConnecting, setIsGoogleConnecting] = useState(false);
+  const [isCopiedOrigin, setIsCopiedOrigin] = useState(false);
+
+  const currentOrigin =
+    typeof window !== "undefined" && window.location.origin
+      ? window.location.origin
+      : "https://just-jeje.vercel.app";
+
+  const handleCopyOrigin = () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(currentOrigin);
+      setIsCopiedOrigin(true);
+      setTimeout(() => setIsCopiedOrigin(false), 2000);
+    }
+  };
 
   // Supabase config state inside modal
   const [supabaseUrl, setSupabaseUrl] = useState(supabaseConfig.url || "");
@@ -87,9 +106,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       clientId,
       autoSync,
     });
-    setSyncStatusMsg("Pengaturan Google Tasks berhasil disimpan!");
+    setGoogleStatus({
+      type: "success",
+      message: "Pengaturan Google Tasks berhasil disimpan!",
+    });
     setTimeout(() => {
-      setSyncStatusMsg("");
+      setGoogleStatus(null);
       setIsGoogleModalOpen(false);
     }, 1200);
   };
@@ -97,68 +119,90 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const handleConnectGoogle = async () => {
     const cleanId = (clientId || DEFAULT_GOOGLE_CLIENT_ID).trim();
     if (!cleanId) {
-      alert("Silakan masukkan Google OAuth Client ID terlebih dahulu untuk menghubungkan.");
+      setGoogleStatus({
+        type: "error",
+        message: "Silakan masukkan Google OAuth Client ID terlebih dahulu.",
+      });
       return;
     }
-    setSyncStatusMsg("Membuka otorisasi Google...");
+    setIsGoogleConnecting(true);
+    setGoogleStatus({
+      type: "info",
+      message: "Membuka jendela otorisasi Google...",
+    });
     try {
       const authResult = await requestGoogleLogin(cleanId);
+      const emailUsername = authResult.name || authResult.email.split("@")[0];
       const updatedCfg: GoogleSyncConfig = {
         ...config,
         clientId: cleanId,
         isConnected: true,
         userEmail: authResult.email,
+        userName: emailUsername,
+        userPicture: authResult.picture,
         lastSyncedAt: Date.now(),
       };
       onSaveConfig(updatedCfg);
-      setSyncStatusMsg(`Berhasil terhubung dengan ${authResult.email}!`);
+      if (emailUsername) {
+        onUpdateUsername(emailUsername);
+        setTempUsername(emailUsername);
+      }
+      setGoogleStatus({
+        type: "success",
+        message: `Berhasil terhubung dengan ${authResult.email}!`,
+      });
 
       // Otomatis sinkronkan tugas lokal yang ada ke Google Tasks
       const allTasks = taskGroups.flatMap((g) => g.tasks);
       if (allTasks.length > 0) {
         setIsGoogleSyncing(true);
         const syncRes = await syncTasksToGoogle(authResult.accessToken, allTasks);
-        setSyncStatusMsg(syncRes.message);
+        setGoogleStatus({
+          type: syncRes.success ? "success" : "error",
+          message: syncRes.message,
+        });
         setIsGoogleSyncing(false);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.warn("Google OAuth popup blocked or failed:", err);
-      // Fallback: izinkan menghubungkan dengan konfirmasi email pengguna
-      const enteredEmail = prompt(
-        `Popup Google (${msg}).\n\nJika Anda ingin menyimpan status koneksi untuk email Anda, masukkan email Google:`,
-        config.userEmail || "jeihanm@gmail.com"
-      );
-      if (enteredEmail && enteredEmail.trim()) {
-        const updatedCfg: GoogleSyncConfig = {
-          ...config,
-          clientId: cleanId,
-          isConnected: true,
-          userEmail: enteredEmail.trim(),
-          lastSyncedAt: Date.now(),
-        };
-        onSaveConfig(updatedCfg);
-        setSyncStatusMsg(`Berhasil terhubung dengan ${enteredEmail.trim()}!`);
-      } else {
-        setSyncStatusMsg(`Gagal menghubungkan Google: ${msg}`);
-      }
+      console.warn("Google OAuth popup error:", err);
+      setGoogleStatus({
+        type: "error",
+        message: msg,
+      });
+    } finally {
+      setIsGoogleConnecting(false);
     }
   };
 
   const handleSyncToGoogleNow = async () => {
     const token = getStoredGoogleToken();
     if (!token) {
+      setGoogleStatus({
+        type: "info",
+        message: "Sesi otorisasi Google telah berakhir. Membuka login kembali...",
+      });
       await handleConnectGoogle();
       return;
     }
     setIsGoogleSyncing(true);
+    setGoogleStatus({
+      type: "info",
+      message: "Sedang menyinkronkan tugas ke Google Tasks...",
+    });
     try {
       const allTasks = taskGroups.flatMap((g) => g.tasks);
       const res = await syncTasksToGoogle(token, allTasks);
-      setSyncStatusMsg(res.message);
+      setGoogleStatus({
+        type: res.success ? "success" : "error",
+        message: res.message,
+      });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
-      setSyncStatusMsg(`Gagal sinkron: ${msg}`);
+      setGoogleStatus({
+        type: "error",
+        message: `Gagal sinkron: ${msg}`,
+      });
     } finally {
       setIsGoogleSyncing(false);
     }
@@ -170,7 +214,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       ...config,
       isConnected: false,
     });
-    setSyncStatusMsg("Koneksi Google Tasks diputus.");
+    setGoogleStatus({
+      type: "info",
+      message: "Koneksi Google Tasks diputus.",
+    });
   };
 
   // --- Supabase Handlers ---
@@ -284,12 +331,29 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     }
   };
 
+  const activeEmail = config.userEmail || (config.isConnected ? "jeihanm@gmail.com" : "");
+  const activeUsername =
+    username && username !== "Username"
+      ? username
+      : config.userName || (activeEmail ? activeEmail.split("@")[0] : "Username");
+  const avatarLetter = (activeUsername || activeEmail || "U").charAt(0).toUpperCase();
+
+  const handleSelectTheme = (themeId: string) => {
+    onThemeChange(themeId);
+  };
+
   return (
     <div className="settings-view-container">
       {/* 1. Profile User Card */}
       <div className="profile-card">
-        <div className="avatar-circle">
-          <User size={28} color="#6b7280" />
+        <div className={`avatar-circle ${activeEmail ? "has-email" : ""}`}>
+          {config.userPicture ? (
+            <img src={config.userPicture} alt="Avatar" className="avatar-profile-img" />
+          ) : activeEmail ? (
+            <span className="avatar-initial-text">{avatarLetter}</span>
+          ) : (
+            <User size={28} color="#6b7280" />
+          )}
         </div>
         <div className="profile-info">
           {isEditingUsername ? (
@@ -310,11 +374,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               onClick={() => setIsEditingUsername(true)}
               title="Klik untuk ubah nama pengguna"
             >
-              {username || "Username"}
+              {activeUsername}
             </h3>
           )}
           <span className="profile-email">
-            {config.userEmail || "user@email.com"}
+            {activeEmail || "user@email.com"}
           </span>
         </div>
       </div>
@@ -394,7 +458,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <select
               className="theme-dropdown"
               value={normalizeThemeId(currentTheme)}
-              onChange={(e) => onThemeChange(e.target.value)}
+              onChange={(e) => handleSelectTheme(e.target.value)}
             >
               {THEMES.map((th) => (
                 <option key={th.id} value={th.id}>
@@ -415,7 +479,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 key={th.id}
                 type="button"
                 className={`theme-preset-card ${isSelected ? "selected" : ""}`}
-                onClick={() => onThemeChange(th.id)}
+                onClick={() => handleSelectTheme(th.id)}
                 title={`${th.name} - ${th.description}`}
               >
                 <div
@@ -657,7 +721,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                         className="btn-primary-small"
                         style={{ display: "flex", alignItems: "center", gap: "5px" }}
                         onClick={handleSyncToGoogleNow}
-                        disabled={isGoogleSyncing}
+                        disabled={isGoogleSyncing || isGoogleConnecting}
                         title="Unggah tugas ke Google Tasks"
                       >
                         <RefreshCw size={13} className={isGoogleSyncing ? "spin-animation" : ""} />
@@ -666,6 +730,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       <button
                         className="btn-danger-outline-small"
                         onClick={handleDisconnect}
+                        disabled={isGoogleSyncing || isGoogleConnecting}
                       >
                         Putus
                       </button>
@@ -674,10 +739,68 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     <button
                       className="btn-primary-small"
                       onClick={handleConnectGoogle}
+                      disabled={isGoogleConnecting}
+                      style={{ display: "flex", alignItems: "center", gap: "5px" }}
                     >
-                      Hubungkan Akun Google
+                      {isGoogleConnecting && <RefreshCw size={13} className="spin-animation" />}
+                      <span>{isGoogleConnecting ? "Membuka Google..." : "Hubungkan Akun Google"}</span>
                     </button>
                   )}
+                </div>
+              </div>
+
+              {googleStatus && (
+                <div className={`toast-inline ${googleStatus.type}`}>
+                  {googleStatus.message}
+                </div>
+              )}
+
+              {/* Box Origin Google Cloud Console Guide */}
+              <div className="google-origin-box">
+                <div className="google-origin-header">
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <Globe size={14} />
+                    <span>Asal URL Web (Origin) Anda</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn-copy-origin"
+                    onClick={handleCopyOrigin}
+                  >
+                    {isCopiedOrigin ? <Check size={13} /> : <Copy size={13} />}
+                    <span>{isCopiedOrigin ? "Tersalin!" : "Salin URL"}</span>
+                  </button>
+                </div>
+                <div className="origin-url-row">
+                  <code className="origin-url-code">{currentOrigin}</code>
+                </div>
+                <p className="origin-hint-text">
+                  ⚠️ <strong>Solusi Error 400 origin_mismatch:</strong> Daftarkan URL di atas ke{" "}
+                  <a
+                    href="https://console.cloud.google.com/apis/credentials"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-link-ext"
+                  >
+                    Google Cloud Console Credentials <ExternalLink size={11} />
+                  </a>{" "}
+                  pada Client ID Anda di bagian <strong>Authorized JavaScript origins</strong>.
+                </p>
+              </div>
+
+              {/* Step by step guide */}
+              <div className="google-setup-steps">
+                <div className="setup-step-item">
+                  <span className="step-num">1</span>
+                  <span>Buka <strong>OAuth 2.0 Client ID</strong> Anda di Google Cloud Console.</span>
+                </div>
+                <div className="setup-step-item">
+                  <span className="step-num">2</span>
+                  <span>Tambahkan <code>{currentOrigin}</code> ke <strong>Authorized JavaScript origins</strong> (tanpa tanda <code>/</code> di akhir).</span>
+                </div>
+                <div className="setup-step-item">
+                  <span className="step-num">3</span>
+                  <span>Pastikan status <a href="https://console.cloud.google.com/apis/library/tasks.googleapis.com" target="_blank" rel="noreferrer" className="inline-link-ext">Google Tasks API <ExternalLink size={10} /></a> berstatus <strong>Enabled</strong>.</span>
                 </div>
               </div>
 
@@ -691,7 +814,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   onChange={(e) => setClientId(e.target.value)}
                 />
                 <span className="input-hint">
-                  Didapatkan dari Google Cloud Console (APIs & Services &gt; Credentials).
+                  Didapatkan dari Google Cloud Console (APIs &amp; Services &gt; Credentials).
                 </span>
               </div>
 
@@ -705,10 +828,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <span>Otomatis sinkron saat menambah atau mengacak tugas</span>
                 </label>
               </div>
-
-              {syncStatusMsg && (
-                <div className="toast-inline success">{syncStatusMsg}</div>
-              )}
 
               <div className="modal-actions">
                 <button

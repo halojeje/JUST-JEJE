@@ -23,6 +23,8 @@ export interface GoogleSyncConfig {
   clientId: string;
   isConnected: boolean;
   userEmail?: string;
+  userName?: string;
+  userPicture?: string;
   autoSync: boolean;
   lastSyncedAt?: number;
 }

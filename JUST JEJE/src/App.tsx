@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { TaskGroup, PoolItem, GoogleSyncConfig, SupabaseConfig } from "./types";
 import {
   loadTaskGroups,
@@ -16,6 +16,10 @@ import {
   fetchRemoteData,
   pushAllToSupabase,
   setupRealtimeSubscription,
+  deleteGroupFromSupabase,
+  deleteTaskFromSupabase,
+  deletePoolItemFromSupabase,
+  updateUserSettingsInSupabase,
 } from "./utils/supabaseSync";
 import { normalizeThemeId } from "./utils/themes";
 import { Header } from "./components/Header";
@@ -49,10 +53,26 @@ function App() {
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  const lastThemeChangeTimeRef = useRef<number>(0);
+
   // Synchronize with LocalStorage
   useEffect(() => {
     localStorage.setItem("just_jeje_username", username);
   }, [username]);
+
+  const handleThemeChange = (newTheme: string) => {
+    const themeId = normalizeThemeId(newTheme);
+    lastThemeChangeTimeRef.current = Date.now();
+    localStorage.setItem("just_jeje_theme", themeId);
+    document.documentElement.setAttribute("data-theme", themeId);
+    document.body.setAttribute("data-theme", themeId);
+    setCurrentTheme(themeId);
+    showToast(`Tema diganti: ${themeId.toUpperCase()}`);
+
+    if (supabaseConfig.isConnected && supabaseConfig.url) {
+      updateUserSettingsInSupabase(username, themeId).catch(console.warn);
+    }
+  };
 
   useEffect(() => {
     const themeId = normalizeThemeId(currentTheme);
@@ -84,7 +104,12 @@ function App() {
       if (remote.taskGroups && remote.taskGroups.length > 0) setTaskGroups(remote.taskGroups);
       if (remote.poolItems && remote.poolItems.length > 0) setPoolItems(remote.poolItems);
       if (remote.username) setUsername(remote.username);
-      if (remote.theme) setCurrentTheme(remote.theme);
+      if (remote.theme && Date.now() - lastThemeChangeTimeRef.current > 4000) {
+        const tId = normalizeThemeId(remote.theme);
+        setCurrentTheme(tId);
+        document.documentElement.setAttribute("data-theme", tId);
+        document.body.setAttribute("data-theme", tId);
+      }
     });
 
     const unsubscribe = setupRealtimeSubscription(() => {
@@ -93,7 +118,12 @@ function App() {
         if (remote.taskGroups) setTaskGroups(remote.taskGroups);
         if (remote.poolItems) setPoolItems(remote.poolItems);
         if (remote.username) setUsername(remote.username);
-        if (remote.theme) setCurrentTheme(remote.theme);
+        if (remote.theme && Date.now() - lastThemeChangeTimeRef.current > 4000) {
+          const tId = normalizeThemeId(remote.theme);
+          setCurrentTheme(tId);
+          document.documentElement.setAttribute("data-theme", tId);
+          document.body.setAttribute("data-theme", tId);
+        }
       });
     });
 
@@ -165,8 +195,8 @@ function App() {
   };
 
   const handleDeleteTask = (groupId: string, taskId: string) => {
-    setTaskGroups((prev) =>
-      prev.map((grp) => {
+    setTaskGroups((prev) => {
+      const updated = prev.map((grp) => {
         if (grp.id === groupId) {
           return {
             ...grp,
@@ -174,9 +204,12 @@ function App() {
           };
         }
         return grp;
-      })
-    );
+      });
+      saveTaskGroups(updated);
+      return updated;
+    });
     showToast("Tugas dihapus");
+    deleteTaskFromSupabase(taskId).catch(console.warn);
   };
 
   const handleEditTask = (groupId: string, taskId: string, newText: string) => {
@@ -217,8 +250,16 @@ function App() {
     const groupToDelete = taskGroups.find((g) => g.id === groupId);
     const title = groupToDelete ? groupToDelete.title : "daftar ini";
     if (window.confirm(`Yakin ingin menghapus list "${title}" beserta semua tugas di dalamnya?`)) {
-      setTaskGroups((prev) => prev.filter((g) => g.id !== groupId));
+      const remaining = taskGroups.filter((g) => g.id !== groupId);
+      setTaskGroups(remaining);
+      saveTaskGroups(remaining);
       showToast(`Daftar "${title}" berhasil dihapus`);
+
+      // Hapus secara permanen dari Supabase agar tidak kembali lagi
+      deleteGroupFromSupabase(groupId).catch(console.warn);
+      if (supabaseConfig.isConnected && supabaseConfig.url) {
+        pushAllToSupabase(remaining, poolItems, username, currentTheme).catch(console.warn);
+      }
     }
   };
 
@@ -235,8 +276,13 @@ function App() {
   };
 
   const handleDeletePoolItem = (id: string) => {
-    setPoolItems((prev) => prev.filter((item) => item.id !== id));
+    setPoolItems((prev) => {
+      const updated = prev.filter((item) => item.id !== id);
+      savePoolItems(updated);
+      return updated;
+    });
     showToast("Ide dihapus dari Pool");
+    deletePoolItemFromSupabase(id).catch(console.warn);
   };
 
   const handleEditPoolItem = (id: string, newText: string) => {
@@ -269,6 +315,10 @@ function App() {
   const handleSaveGoogleConfig = (cfg: GoogleSyncConfig) => {
     setGoogleConfig(cfg);
     saveGoogleConfig(cfg);
+    if (cfg.userName && (!username || username === "Username")) {
+      setUsername(cfg.userName);
+      localStorage.setItem("just_jeje_username", cfg.userName);
+    }
   };
 
   const handleSaveSupabaseConfig = (cfg: SupabaseConfig) => {
@@ -337,22 +387,34 @@ function App() {
             <main className="content-area">
               {currentView === "dashboard" && (
                 <div className="dashboard-content">
-                  {taskGroups.map((group, index) => (
-                    <TaskCard
-                      key={group.id}
-                      group={group}
-                      canDeleteGroup={index > 0}
-                      onDeleteGroup={handleDeleteGroup}
-                      poolItems={poolItems}
-                      onUpdateGroupTitle={handleUpdateGroupTitle}
-                      onAddTask={handleAddTask}
-                      onToggleTask={handleToggleTask}
-                      onDeleteTask={handleDeleteTask}
-                      onEditTask={handleEditTask}
-                      onSaveToPool={handleSaveToPool}
-                      onNavigateGenerate={() => setCurrentView("generate")}
-                    />
-                  ))}
+                  {taskGroups.length === 0 ? (
+                    <div className="empty-dashboard-state">
+                      <p>Belum ada daftar to-do list.</p>
+                      <button
+                        className="btn-generate-action"
+                        onClick={() => handleAddListGroup("Tugas Baru")}
+                      >
+                        + Buat List Baru
+                      </button>
+                    </div>
+                  ) : (
+                    taskGroups.map((group) => (
+                      <TaskCard
+                        key={group.id}
+                        group={group}
+                        canDeleteGroup={true}
+                        onDeleteGroup={handleDeleteGroup}
+                        poolItems={poolItems}
+                        onUpdateGroupTitle={handleUpdateGroupTitle}
+                        onAddTask={handleAddTask}
+                        onToggleTask={handleToggleTask}
+                        onDeleteTask={handleDeleteTask}
+                        onEditTask={handleEditTask}
+                        onSaveToPool={handleSaveToPool}
+                        onNavigateGenerate={() => setCurrentView("generate")}
+                      />
+                    ))
+                  )}
 
                   {/* Floating Action Button (FAB) at Bottom Right */}
                   <button
@@ -375,6 +437,7 @@ function App() {
                     onSendToDashboard={handleSendToDashboard}
                     onOpenAddIdea={() => setIsAddIdeaOpen(true)}
                     onRestoreDefaults={() => setPoolItems(DEFAULT_POOL_ITEMS)}
+                    onAddIdea={handleAddPoolItem}
                   />
 
                   {/* Floating Action Button (FAB) for Generator page as in Mockup 2 */}
@@ -400,7 +463,7 @@ function App() {
                   onBack={() => setCurrentView("dashboard")}
                   taskGroups={taskGroups}
                   currentTheme={currentTheme}
-                  onThemeChange={setCurrentTheme}
+                  onThemeChange={handleThemeChange}
                   username={username}
                   onUpdateUsername={setUsername}
                 />
