@@ -439,16 +439,6 @@ function App() {
                     onRestoreDefaults={() => setPoolItems(DEFAULT_POOL_ITEMS)}
                     onAddIdea={handleAddPoolItem}
                   />
-
-                  {/* Floating Action Button (FAB) for Generator page as in Mockup 2 */}
-                  <button
-                    id="btn-fab-add-idea"
-                    className="fab-button"
-                    onClick={() => setIsAddIdeaOpen(true)}
-                    title="Tambah Ide ke Pool"
-                  >
-                    <Plus size={38} strokeWidth={2.4} color="#0d47a1" />
-                  </button>
                 </div>
               )}
 
