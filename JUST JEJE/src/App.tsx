@@ -22,6 +22,7 @@ import {
   updateUserSettingsInSupabase,
 } from "./utils/supabaseSync";
 import { normalizeThemeId } from "./utils/themes";
+import { Scaffold } from "./components/Scaffold";
 import { Header } from "./components/Header";
 import { TaskCard } from "./components/TaskCard";
 import { GenerateView } from "./components/GenerateView";
@@ -372,20 +373,29 @@ function App() {
           />
         ) : (
           <>
-
-
-            {/* Top Header (Hidden automatically on Settings view) */}
-            <Header
-              currentView={currentView}
-              onOpenSettings={() => setCurrentView("settings")}
-              onNavigateGenerate={() => setCurrentView("generate")}
-              onNavigateDashboard={() => setCurrentView("dashboard")}
-              onOpenAddIdea={() => setIsAddIdeaOpen(true)}
-            />
-
-            {/* Main Content Area */}
-            <main className="content-area">
-              {currentView === "dashboard" && (
+            {currentView === "dashboard" && (
+              <Scaffold
+                className="scaffold-dashboard"
+                appBar={
+                  <Header
+                    currentView="dashboard"
+                    onOpenSettings={() => setCurrentView("settings")}
+                    onNavigateGenerate={() => setCurrentView("generate")}
+                    onNavigateDashboard={() => setCurrentView("dashboard")}
+                    onOpenAddIdea={() => setIsAddIdeaOpen(true)}
+                  />
+                }
+                floatingActionButton={
+                  <button
+                    id="btn-fab-add"
+                    className="fab-button"
+                    onClick={() => setIsAddTaskOpen(true)}
+                    title="Tambah Tugas atau List Baru"
+                  >
+                    <Plus size={38} strokeWidth={2.4} color="#0d47a1" />
+                  </button>
+                }
+              >
                 <div className="dashboard-content">
                   {taskGroups.length === 0 ? (
                     <div className="empty-dashboard-state">
@@ -415,20 +425,22 @@ function App() {
                       />
                     ))
                   )}
-
-                  {/* Floating Action Button (FAB) at Bottom Right */}
-                  <button
-                    id="btn-fab-add"
-                    className="fab-button"
-                    onClick={() => setIsAddTaskOpen(true)}
-                    title="Tambah Tugas atau List Baru"
-                  >
-                    <Plus size={38} strokeWidth={2.4} color="#0d47a1" />
-                  </button>
                 </div>
-              )}
+              </Scaffold>
+            )}
 
-              {currentView === "generate" && (
+            {currentView === "generate" && (
+              <Scaffold
+                className="scaffold-generate"
+                appBar={
+                  <Header
+                    currentView="generate"
+                    onOpenSettings={() => setCurrentView("settings")}
+                    onNavigateGenerate={() => setCurrentView("generate")}
+                    onNavigateDashboard={() => setCurrentView("dashboard")}
+                  />
+                }
+              >
                 <div className="generate-content-wrapper">
                   <GenerateView
                     poolItems={poolItems}
@@ -440,9 +452,21 @@ function App() {
                     onAddIdea={handleAddPoolItem}
                   />
                 </div>
-              )}
+              </Scaffold>
+            )}
 
-              {currentView === "settings" && (
+            {currentView === "settings" && (
+              <Scaffold
+                className="scaffold-settings"
+                appBar={
+                  <Header
+                    currentView="settings"
+                    onOpenSettings={() => setCurrentView("settings")}
+                    onNavigateGenerate={() => setCurrentView("generate")}
+                    onNavigateDashboard={() => setCurrentView("dashboard")}
+                  />
+                }
+              >
                 <SettingsView
                   config={googleConfig}
                   onSaveConfig={handleSaveGoogleConfig}
@@ -457,8 +481,8 @@ function App() {
                   username={username}
                   onUpdateUsername={setUsername}
                 />
-              )}
-            </main>
+              </Scaffold>
+            )}
           </>
         )}
 
