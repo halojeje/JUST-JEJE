@@ -29,6 +29,7 @@ import { GenerateView } from "./components/GenerateView";
 import { SettingsView } from "./components/SettingsView";
 import { AddIdeaModal } from "./components/AddIdeaModal";
 import { AddTaskModal } from "./components/AddTaskModal";
+import { AddListModal } from "./components/AddListModal";
 import { WidgetTopBar } from "./components/WidgetTopBar";
 import { CompactWidgetView } from "./components/CompactWidgetView";
 import { resizeWindow, isTauri } from "./utils/tauriWindow";
@@ -52,6 +53,7 @@ function App() {
 
   const [isAddIdeaOpen, setIsAddIdeaOpen] = useState(false);
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
+  const [isAddListOpen, setIsAddListOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const lastThemeChangeTimeRef = useRef<number>(0);
@@ -387,12 +389,13 @@ function App() {
                 }
                 floatingActionButton={
                   <button
-                    id="btn-fab-add"
-                    className="fab-button"
-                    onClick={() => setIsAddTaskOpen(true)}
-                    title="Tambah Tugas atau List Baru"
+                    id="btn-fab-add-list"
+                    className="fab-add-list-button"
+                    onClick={() => setIsAddListOpen(true)}
+                    title="Buat List Baru"
                   >
-                    <Plus size={38} strokeWidth={2.4} color="#0d47a1" />
+                    <Plus size={17} strokeWidth={2.4} />
+                    <span>Buat List Baru</span>
                   </button>
                 }
               >
@@ -498,6 +501,12 @@ function App() {
           isOpen={isAddIdeaOpen}
           onClose={() => setIsAddIdeaOpen(false)}
           onAddIdea={handleAddPoolItem}
+        />
+
+        <AddListModal
+          isOpen={isAddListOpen}
+          onClose={() => setIsAddListOpen(false)}
+          onAddListGroup={handleAddListGroup}
         />
 
         <AddTaskModal

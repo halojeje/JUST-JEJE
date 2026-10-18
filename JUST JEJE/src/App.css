@@ -27,6 +27,11 @@
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.08);
   --shadow-fab: 0 8px 24px rgba(30, 136, 229, 0.35);
+
+  --fab-list-bg: #cfd3d8;
+  --fab-list-color: #4b5563;
+  --fab-list-hover: #bcc1c8;
+  --fab-list-color-hover: #1f2937;
 }
 
 * {
@@ -215,7 +220,14 @@ body {
 
 .scaffold-fab {
   position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 28px;
   z-index: 40;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
 }
 
 /* Main Content Area */
@@ -727,25 +739,38 @@ body {
 }
 
 /* ==========================================================================
-   Floating Action Button (FAB) (Mockup 1)
+   Floating Action Button (FAB) - Buat List Baru (Matching Design Mockup)
    ========================================================================== */
-.fab-button {
-  position: fixed;
-  right: max(20px, calc(50% - 240px + 20px));
-  bottom: 28px;
-  width: 68px;
-  height: 68px;
-  border-radius: 22px;
-  background-color: var(--primary-blue);
-  color: #0d47a1;
-  border: none;
-  display: flex;
+.fab-add-list-button {
+  pointer-events: auto;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 7px;
+  background-color: var(--fab-list-bg, #cfd3d8);
+  color: var(--fab-list-color, #4b5563);
+  border: none;
+  border-radius: 12px;
+  padding: 10px 20px;
+  height: 42px;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
   cursor: pointer;
-  box-shadow: 0 10px 24px rgba(30, 136, 229, 0.35);
-  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  z-index: 40;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.fab-add-list-button:hover {
+  background-color: var(--fab-list-hover, #bcc1c8);
+  color: var(--fab-list-color-hover, #1f2937);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+}
+
+.fab-add-list-button:active {
+  transform: translateY(0);
 }
 
 @media (max-width: 480px) {
@@ -776,12 +801,8 @@ body {
     padding: 5px 5px 5px 12px;
   }
 
-  .fab-button {
-    right: 20px;
+  .scaffold-fab {
     bottom: 24px;
-    width: 62px;
-    height: 62px;
-    border-radius: 20px;
   }
 }
 
@@ -833,12 +854,14 @@ body {
     height: 38px;
   }
 
-  .fab-button {
-    right: 14px;
+  .scaffold-fab {
     bottom: 18px;
-    width: 56px;
-    height: 56px;
-    border-radius: 18px;
+  }
+
+  .fab-add-list-button {
+    height: 38px;
+    padding: 8px 16px;
+    font-size: 12.5px;
   }
 }
 
@@ -863,18 +886,6 @@ body {
     border-radius: 22px;
   }
 
-  .fab-button {
-    right: calc(50% - 260px + 24px);
-  }
-}
-
-.fab-button:hover {
-  transform: scale(1.06);
-  box-shadow: 0 10px 28px rgba(30, 136, 229, 0.45);
-}
-
-.fab-button:active {
-  transform: scale(0.96);
 }
 
 /* ==========================================================================
@@ -2217,6 +2228,19 @@ body[data-theme="halloween"] {
 [data-theme="dreamland"] .task-checkbox,
 [data-theme="halloween"] .task-checkbox {
   border-color: var(--text-muted);
+}
+
+[data-theme="dreamland"] .fab-add-list-button,
+[data-theme="halloween"] .fab-add-list-button {
+  background-color: #2d354b;
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dreamland"] .fab-add-list-button:hover,
+[data-theme="halloween"] .fab-add-list-button:hover {
+  background-color: #37415c;
+  color: #f1f5f9;
 }
 
 [data-theme="dreamland"] .task-checkbox.checked,
