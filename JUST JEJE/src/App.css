@@ -211,7 +211,6 @@ body {
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  min-height: calc(100vh - 160px);
 }
 
 .scaffold-fab {
@@ -233,7 +232,6 @@ body {
   flex-direction: column;
   gap: 14px;
   width: 100%;
-  flex: 1;
   box-sizing: border-box;
   padding: 4px 0 24px 0;
 }
@@ -252,18 +250,9 @@ body {
   flex-direction: column;
   gap: 16px;
   width: 100%;
-  flex: 1;
-  min-height: calc(100vh - 160px);
   box-sizing: border-box;
   margin-top: 4px;
   transition: all 0.2s ease;
-}
-
-/* If multiple task cards exist on dashboard, let each card size naturally */
-.scaffold-dashboard:has(.task-card-container + .task-card-container) .task-card-container,
-.dashboard-content:has(.task-card-container + .task-card-container) .task-card-container {
-  flex: initial;
-  min-height: 280px;
 }
 
 .task-card-header {
@@ -344,7 +333,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  flex: 1;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .task-empty-state {
@@ -368,6 +358,8 @@ body {
   gap: 12px;
   transition: all 0.2s ease;
   position: relative;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .task-item-card:hover {
@@ -550,7 +542,9 @@ body {
   justify-content: space-between;
   gap: 8px;
   position: relative;
-  margin-top: auto;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 4px;
 }
 
 .task-input-field {
@@ -760,15 +754,10 @@ body {
     padding-right: 16px;
   }
 
-  .scaffold-body,
-  .dashboard-content,
-  .generate-content-wrapper,
-  .settings-view-container,
   .task-card-container,
   .generator-card-container {
     padding: 18px 16px 20px 16px;
     border-radius: 18px;
-    min-height: calc(100vh - 130px);
   }
 
   .pool-item-card,
@@ -802,15 +791,10 @@ body {
     padding-right: 12px;
   }
 
-  .scaffold-body,
-  .dashboard-content,
-  .generate-content-wrapper,
-  .settings-view-container,
   .task-card-container,
   .generator-card-container {
     padding: 16px 14px 18px 14px;
     border-radius: 16px;
-    min-height: calc(100vh - 120px);
   }
 
   .pool-item-card,
@@ -866,15 +850,10 @@ body {
     padding-right: 24px;
   }
 
-  .scaffold-body,
-  .dashboard-content,
-  .generate-content-wrapper,
-  .settings-view-container,
   .task-card-container,
   .generator-card-container {
     padding: 24px 22px 26px 22px;
     border-radius: 22px;
-    min-height: calc(100vh - 170px);
   }
 
   .pool-item-card,
@@ -906,7 +885,6 @@ body {
   flex-direction: column;
   gap: 14px;
   width: 100%;
-  flex: 1;
   box-sizing: border-box;
   padding: 4px 0 24px 0;
 }
@@ -916,7 +894,6 @@ body {
   flex-direction: column;
   gap: 14px;
   width: 100%;
-  flex: 1;
   box-sizing: border-box;
 }
 
@@ -1725,8 +1702,6 @@ body {
   flex-direction: column;
   gap: 14px;
   width: 100%;
-  flex: 1;
-  min-height: calc(100vh - 160px);
   box-sizing: border-box;
   padding: 4px 0 24px 0;
   animation: fadeIn 0.2s ease-out;
