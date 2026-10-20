@@ -1,8 +1,0 @@
-{
-  "name": "just-jeje",
-  "version": "1.0.0",
-  "private": true,
-  "scripts": {
-    "build": "bash scripts/build_vercel.sh"
-  }
-}
