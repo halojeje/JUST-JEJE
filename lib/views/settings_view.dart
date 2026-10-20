@@ -4,6 +4,7 @@ import '../services/pdf_service.dart';
 import '../theme/app_themes.dart';
 import '../widgets/modals/google_modal.dart';
 import '../widgets/modals/supabase_modal.dart';
+import '../widgets/modals/widget_settings_modal.dart';
 
 class SettingsView extends StatefulWidget {
   final GoogleSyncConfig googleConfig;
@@ -543,6 +544,32 @@ class _SettingsViewState extends State<SettingsView> {
             title: "Export to pdf",
             onTap: () async {
               await PdfService.exportToPdf(widget.taskGroups, widget.username);
+            },
+          ),
+
+          // 6. Android Home Screen Widget
+          _buildMenuCard(
+            icon: Icons.widgets_outlined,
+            title: "Widget Screen Android",
+            trailing: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: widget.theme.primaryLight,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                "Home Screen",
+                style: AppThemes.font(fontSize: 11.5, fontWeight: FontWeight.bold, color: widget.theme.primary),
+              ),
+            ),
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (ctx) => WidgetSettingsModal(
+                  taskGroups: widget.taskGroups,
+                  theme: widget.theme,
+                ),
+              );
             },
           ),
 

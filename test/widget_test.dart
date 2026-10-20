@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:just_jeje/main.dart';
+import 'package:just_jeje/models/models.dart';
 import 'package:just_jeje/theme/app_themes.dart';
 import 'package:just_jeje/views/login_view.dart';
 import 'package:just_jeje/views/register_view.dart';
+import 'package:just_jeje/widgets/jeje_widget_card.dart';
+import 'package:just_jeje/widgets/modals/widget_settings_modal.dart';
 
 void main() {
   testWidgets('App smoke test', (WidgetTester tester) async {
@@ -118,5 +121,60 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(registeredName, 'jeihan');
+  });
+
+  testWidgets('JejeWidgetCard renders group title and tasks properly', (WidgetTester tester) async {
+    final group = TaskGroup(
+      id: 'grp-1',
+      title: 'Tugas Kuliah',
+      tasks: [
+        Task(id: 't-1', text: 'Kerjakan laporan', completed: false, createdAt: 1000),
+        Task(id: 't-2', text: 'Presentasi to-do app', completed: true, createdAt: 2000),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: JejeWidgetCard(
+            group: group,
+            theme: AppThemes.allThemes.first,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Tugas Kuliah'), findsOneWidget);
+    expect(find.text('1/2 Selesai'), findsOneWidget);
+    expect(find.text('Kerjakan laporan'), findsOneWidget);
+    expect(find.text('Presentasi to-do app'), findsOneWidget);
+    expect(find.text('JUST JEJE'), findsOneWidget);
+  });
+
+  testWidgets('WidgetSettingsModal renders preview and installation steps', (WidgetTester tester) async {
+    final group = TaskGroup(
+      id: 'grp-1',
+      title: 'Pekerjaan',
+      tasks: [
+        Task(id: 't-1', text: 'Rapat tim', completed: false, createdAt: 1000),
+      ],
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: WidgetSettingsModal(
+            taskGroups: [group],
+            theme: AppThemes.allThemes.first,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Widget Screen Android'), findsOneWidget);
+    expect(find.text('Preview Tampilan Widget:'), findsOneWidget);
+    expect(find.text('Pekerjaan'), findsOneWidget);
+    expect(find.text('Cara Memasang di Layar Utama HP:'), findsOneWidget);
+    expect(find.text('Perbarui Widget Sekarang'), findsOneWidget);
   });
 }

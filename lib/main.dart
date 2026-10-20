@@ -15,6 +15,7 @@ import 'views/login_view.dart';
 import 'views/register_view.dart';
 import 'views/settings_view.dart';
 import 'services/firebase_auth_service.dart';
+import 'services/home_widget_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -91,6 +92,9 @@ class _JustJejeAppState extends State<JustJejeApp> {
       _isLoading = false;
     });
 
+    final currentTheme = AppThemes.getThemeById(theme);
+    HomeWidgetService.syncFromGroups(groups, currentTheme);
+
     _initSupabaseSync(sConfig);
   }
 
@@ -114,6 +118,8 @@ class _JustJejeAppState extends State<JustJejeApp> {
       StorageService.savePoolItems(_poolItems);
       StorageService.saveUsername(_username);
       StorageService.saveTheme(_currentThemeId);
+      final activeTheme = AppThemes.getThemeById(_currentThemeId);
+      HomeWidgetService.syncFromGroups(_taskGroups, activeTheme);
     });
 
     // 2. Realtime subscription
@@ -129,6 +135,8 @@ class _JustJejeAppState extends State<JustJejeApp> {
             if (remote.username != null) _username = remote.username!;
             if (remote.theme != null) _currentThemeId = remote.theme!;
           });
+          final activeTheme = AppThemes.getThemeById(_currentThemeId);
+          HomeWidgetService.syncFromGroups(_taskGroups, activeTheme);
         });
       },
     );
@@ -139,6 +147,9 @@ class _JustJejeAppState extends State<JustJejeApp> {
     StorageService.savePoolItems(_poolItems);
     StorageService.saveUsername(_username);
     StorageService.saveTheme(_currentThemeId);
+
+    final activeTheme = AppThemes.getThemeById(_currentThemeId);
+    HomeWidgetService.syncFromGroups(_taskGroups, activeTheme);
 
     if (!_supabaseConfig.isConnected ||
         !_supabaseConfig.autoSync ||
