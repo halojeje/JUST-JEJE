@@ -35,6 +35,21 @@ class StorageService {
     ];
   }
 
+  /// Initial empty state for new users
+  static List<TaskGroup> getNewUserTaskGroups() {
+    return [
+      TaskGroup(
+        id: 'group-${DateTime.now().millisecondsSinceEpoch}',
+        title: 'Daftar Tugas',
+        tasks: [], // Kosong seperti baru!
+      ),
+    ];
+  }
+
+  static List<PoolItem> getNewUserPoolItems() {
+    return []; // Kosong seperti baru!
+  }
+
   static List<PoolItem> getDefaultPoolItems() {
     final now = DateTime.now().millisecondsSinceEpoch;
     return [
@@ -94,6 +109,30 @@ class StorageService {
     } catch (_) {}
   }
 
+  static Future<List<TaskGroup>?> loadTaskGroupsForUser(String email) async {
+    try {
+      final clean = email.trim().toLowerCase();
+      if (clean.isEmpty) return null;
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString('${_keyTaskGroups}_$clean');
+      if (raw != null && raw.isNotEmpty) {
+        final List<dynamic> list = jsonDecode(raw);
+        return list.map((item) => TaskGroup.fromJson(item as Map<String, dynamic>)).toList();
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  static Future<void> saveTaskGroupsForUser(String email, List<TaskGroup> groups) async {
+    try {
+      final clean = email.trim().toLowerCase();
+      if (clean.isEmpty) return;
+      final prefs = await SharedPreferences.getInstance();
+      final raw = jsonEncode(groups.map((g) => g.toJson()).toList());
+      await prefs.setString('${_keyTaskGroups}_$clean', raw);
+    } catch (_) {}
+  }
+
   // --- Pool Items ---
   static Future<List<PoolItem>> loadPoolItems() async {
     try {
@@ -114,6 +153,30 @@ class StorageService {
       final prefs = await SharedPreferences.getInstance();
       final raw = jsonEncode(items.map((i) => i.toJson()).toList());
       await prefs.setString(_keyGeneratePool, raw);
+    } catch (_) {}
+  }
+
+  static Future<List<PoolItem>?> loadPoolItemsForUser(String email) async {
+    try {
+      final clean = email.trim().toLowerCase();
+      if (clean.isEmpty) return null;
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString('${_keyGeneratePool}_$clean');
+      if (raw != null && raw.isNotEmpty) {
+        final List<dynamic> list = jsonDecode(raw);
+        return list.map((item) => PoolItem.fromJson(item as Map<String, dynamic>)).toList();
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  static Future<void> savePoolItemsForUser(String email, List<PoolItem> items) async {
+    try {
+      final clean = email.trim().toLowerCase();
+      if (clean.isEmpty) return;
+      final prefs = await SharedPreferences.getInstance();
+      final raw = jsonEncode(items.map((i) => i.toJson()).toList());
+      await prefs.setString('${_keyGeneratePool}_$clean', raw);
     } catch (_) {}
   }
 

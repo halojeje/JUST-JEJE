@@ -5,6 +5,7 @@ import 'package:just_jeje/models/models.dart';
 import 'package:just_jeje/theme/app_themes.dart';
 import 'package:just_jeje/views/login_view.dart';
 import 'package:just_jeje/views/register_view.dart';
+import 'package:just_jeje/services/storage_service.dart';
 import 'package:just_jeje/widgets/jeje_widget_card.dart';
 import 'package:just_jeje/widgets/modals/widget_settings_modal.dart';
 
@@ -176,5 +177,15 @@ void main() {
     expect(find.text('Pekerjaan'), findsOneWidget);
     expect(find.text('Cara Memasang di Layar Utama HP:'), findsOneWidget);
     expect(find.text('Perbarui Widget Sekarang'), findsOneWidget);
+  });
+
+  test('First-time user receives empty fresh card state with no tasks', () {
+    final freshGroups = StorageService.getNewUserTaskGroups();
+    final freshPool = StorageService.getNewUserPoolItems();
+
+    expect(freshGroups, isNotEmpty);
+    expect(freshGroups.first.title, 'Daftar Tugas');
+    expect(freshGroups.first.tasks, isEmpty);
+    expect(freshPool, isEmpty);
   });
 }

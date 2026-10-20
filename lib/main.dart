@@ -15,6 +15,7 @@ import 'views/login_view.dart';
 import 'views/register_view.dart';
 import 'views/settings_view.dart';
 import 'services/firebase_auth_service.dart';
+import 'services/firestore_service.dart';
 import 'services/home_widget_service.dart';
 
 void main() async {
@@ -48,6 +49,7 @@ class _JustJejeAppState extends State<JustJejeApp> {
   bool _isLoading = true;
   Timer? _debounceSyncTimer;
   void Function()? _unsubscribeRealtime;
+  StreamSubscription? _firestoreSubscription;
 
   late ConfettiController _confettiController;
 
@@ -64,20 +66,32 @@ class _JustJejeAppState extends State<JustJejeApp> {
   void dispose() {
     _debounceSyncTimer?.cancel();
     _unsubscribeRealtime?.call();
+    _firestoreSubscription?.cancel();
     _confettiController.dispose();
     super.dispose();
   }
 
   Future<void> _loadInitialData() async {
-    final groups = await StorageService.loadTaskGroups();
-    final pool = await StorageService.loadPoolItems();
+    final loggedIn = await StorageService.loadIsLoggedIn();
+    final email = await StorageService.loadUserEmail();
+    final user = await StorageService.loadUsername();
+    final pic = await StorageService.loadUserPicture();
     final gConfig = await StorageService.loadGoogleConfig();
     final sConfig = await StorageService.loadSupabaseConfig();
-    final user = await StorageService.loadUsername();
-    final email = await StorageService.loadUserEmail();
-    final pic = await StorageService.loadUserPicture();
-    final loggedIn = await StorageService.loadIsLoggedIn();
     final theme = await StorageService.loadTheme();
+
+    List<TaskGroup> groups;
+    List<PoolItem> pool;
+
+    if (loggedIn && email.isNotEmpty && email != "user@email.com") {
+      final cachedGroups = await StorageService.loadTaskGroupsForUser(email);
+      final cachedPool = await StorageService.loadPoolItemsForUser(email);
+      groups = cachedGroups ?? StorageService.getNewUserTaskGroups();
+      pool = cachedPool ?? StorageService.getNewUserPoolItems();
+    } else {
+      groups = await StorageService.loadTaskGroups();
+      pool = await StorageService.loadPoolItems();
+    }
 
     setState(() {
       _taskGroups = groups;
@@ -96,6 +110,10 @@ class _JustJejeAppState extends State<JustJejeApp> {
     HomeWidgetService.syncFromGroups(groups, currentTheme);
 
     _initSupabaseSync(sConfig);
+
+    if (loggedIn && email.isNotEmpty && email != "user@email.com") {
+      _syncUserFromFirestore(email, user, pic);
+    }
   }
 
   void _initSupabaseSync(SupabaseConfig config) {
@@ -147,6 +165,20 @@ class _JustJejeAppState extends State<JustJejeApp> {
     StorageService.savePoolItems(_poolItems);
     StorageService.saveUsername(_username);
     StorageService.saveTheme(_currentThemeId);
+
+    if (_isLoggedIn && _userEmail.isNotEmpty && _userEmail != "user@email.com") {
+      StorageService.saveTaskGroupsForUser(_userEmail, _taskGroups);
+      StorageService.savePoolItemsForUser(_userEmail, _poolItems);
+
+      FirestoreService.saveUserData(
+        email: _userEmail,
+        taskGroups: _taskGroups,
+        poolItems: _poolItems,
+        username: _username,
+        theme: _currentThemeId,
+        userPicture: _userPicture,
+      );
+    }
 
     final activeTheme = AppThemes.getThemeById(_currentThemeId);
     HomeWidgetService.syncFromGroups(_taskGroups, activeTheme);
@@ -403,7 +435,7 @@ class _JustJejeAppState extends State<JustJejeApp> {
     _showToast("Data dikembalikan ke setelan awal mockup!");
   }
 
-  void _handleLoginSuccess(String name, String email, String? avatarUrl) {
+  Future<void> _handleLoginSuccess(String name, String email, String? avatarUrl) async {
     setState(() {
       _username = name;
       _userEmail = email;
@@ -418,10 +450,11 @@ class _JustJejeAppState extends State<JustJejeApp> {
     StorageService.saveIsLoggedIn(true);
 
     _showToast("Selamat datang, $name!");
-    _triggerAutoSync();
+    await _syncUserFromFirestore(email, name, avatarUrl);
   }
 
   void _handleLogout() {
+    _firestoreSubscription?.cancel();
     FirebaseAuthService.signOut();
     setState(() {
       _isLoggedIn = false;
@@ -430,9 +463,94 @@ class _JustJejeAppState extends State<JustJejeApp> {
       _username = "Username";
       _showRegister = false;
       _currentView = "dashboard";
+      _taskGroups = [];
+      _poolItems = [];
     });
     StorageService.clearAuth();
     _showToast("Anda telah logout.");
+  }
+
+  Future<void> _syncUserFromFirestore(String email, [String? name, String? avatarUrl]) async {
+    _firestoreSubscription?.cancel();
+
+    // 1. Try local per-user cache first
+    final cachedGroups = await StorageService.loadTaskGroupsForUser(email);
+    final cachedPool = await StorageService.loadPoolItemsForUser(email);
+
+    if (cachedGroups != null) {
+      setState(() {
+        _taskGroups = cachedGroups;
+        if (cachedPool != null) _poolItems = cachedPool;
+      });
+    }
+
+    // 2. Query Firestore
+    final remoteUser = await FirestoreService.fetchUserData(email);
+
+    if (remoteUser != null) {
+      // User already has data in Firestore!
+      setState(() {
+        _taskGroups = remoteUser.taskGroups;
+        _poolItems = remoteUser.poolItems;
+        if (remoteUser.username != null && remoteUser.username!.isNotEmpty) {
+          _username = remoteUser.username!;
+        }
+        if (remoteUser.theme != null && remoteUser.theme!.isNotEmpty) {
+          _currentThemeId = remoteUser.theme!;
+        }
+        if (remoteUser.userPicture != null) {
+          _userPicture = remoteUser.userPicture;
+        }
+      });
+      StorageService.saveTaskGroupsForUser(email, _taskGroups);
+      StorageService.savePoolItemsForUser(email, _poolItems);
+      StorageService.saveUsername(_username);
+      StorageService.saveTheme(_currentThemeId);
+    } else {
+      // First time user! Empty card like brand new!
+      final freshGroups = StorageService.getNewUserTaskGroups(); // tasks: [] (kosong seperti baru!)
+      final freshPool = StorageService.getNewUserPoolItems(); // [] (kosong!)
+
+      setState(() {
+        _taskGroups = freshGroups;
+        _poolItems = freshPool;
+      });
+
+      StorageService.saveTaskGroupsForUser(email, freshGroups);
+      StorageService.savePoolItemsForUser(email, freshPool);
+
+      await FirestoreService.saveUserData(
+        email: email,
+        taskGroups: freshGroups,
+        poolItems: freshPool,
+        username: name ?? _username,
+        theme: _currentThemeId,
+        userPicture: avatarUrl ?? _userPicture,
+      );
+    }
+
+    final activeTheme = AppThemes.getThemeById(_currentThemeId);
+    HomeWidgetService.syncFromGroups(_taskGroups, activeTheme);
+
+    // 3. Listen to realtime Firestore updates for this user
+    _firestoreSubscription = FirestoreService.setupRealtimeSubscription(
+      email,
+      (updatedUser) {
+        if (!mounted) return;
+        setState(() {
+          _taskGroups = updatedUser.taskGroups;
+          _poolItems = updatedUser.poolItems;
+          if (updatedUser.username != null && updatedUser.username!.isNotEmpty) {
+            _username = updatedUser.username!;
+          }
+          if (updatedUser.theme != null && updatedUser.theme!.isNotEmpty) {
+            _currentThemeId = updatedUser.theme!;
+          }
+        });
+        StorageService.saveTaskGroupsForUser(email, _taskGroups);
+        StorageService.savePoolItemsForUser(email, _poolItems);
+      },
+    );
   }
 
   @override
