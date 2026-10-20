@@ -54,7 +54,7 @@ class _RegisterViewState extends State<RegisterView> {
 
     // Password validation: minimum 6 digits
     if (password.length < 6) {
-      _showError("Kata sandi harus minimal 6 digit!");
+      _showError("Password harus minimal 6 digit!");
       return;
     }
 
@@ -246,7 +246,7 @@ class _RegisterViewState extends State<RegisterView> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              "Kata Sandi",
+                              "Password",
                               style: AppThemes.font(
                                 fontSize: 13.5,
                                 fontWeight: FontWeight.w500,

@@ -95,7 +95,7 @@ void main() {
     expect(find.text('REGISTER'), findsNWidgets(2));
     expect(find.text('Username'), findsOneWidget);
     expect(find.text('Alamat Email'), findsOneWidget);
-    expect(find.text('Kata Sandi'), findsOneWidget);
+    expect(find.text('Password'), findsOneWidget);
     expect(find.text('Forgot Password'), findsOneWidget);
     expect(find.text('Already have an account? '), findsOneWidget);
     expect(find.text('Login here'), findsOneWidget);
@@ -108,7 +108,7 @@ void main() {
     await tester.tap(find.widgetWithText(ElevatedButton, 'REGISTER'));
     await tester.pump();
 
-    expect(find.text('Kata sandi harus minimal 6 digit!'), findsOneWidget);
+    expect(find.text('Password harus minimal 6 digit!'), findsOneWidget);
     expect(registeredName, isNull);
 
     // Test password >= 6 digits succeeds
