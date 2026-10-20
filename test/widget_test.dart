@@ -42,6 +42,7 @@ void main() {
     await tester.enterText(emailField, 'jeihan.maharani@gmail.com');
     await tester.tap(find.text('LOGIN'));
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
     expect(loggedName, 'Jeihan Maharani');
     expect(loggedEmail, 'jeihan.maharani@gmail.com');
@@ -66,6 +67,7 @@ void main() {
 
     await tester.tap(find.text('Sign in with Google'));
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
     expect(loggedName, 'Jeihan Maharani');
     expect(loggedEmail, 'jeihanm@gmail.com');

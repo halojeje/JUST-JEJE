@@ -11,13 +11,12 @@ class DefaultFirebaseOptions {
   static const String authDomain = 'chao571-todolist-project2026.firebaseapp.com';
   static const String storageBucket = 'chao571-todolist-project2026.firebasestorage.app';
 
-  // Masukkan API Key & App ID dari Firebase Console -> Project Settings -> General
-  static const String apiKey = 'YOUR_FIREBASE_API_KEY';
-  static const String appId = 'YOUR_FIREBASE_APP_ID';
-  static const String messagingSenderId = 'YOUR_MESSAGING_SENDER_ID';
+  static const String apiKey = 'AIzaSyCgBcOppDc_ZVVHpASquy8XSd_s8MMFFvI';
+  static const String appId = '1:316022951975:web:c4a7e1ca45d13aec74fe02';
+  static const String messagingSenderId = '316022951975';
+  static const String measurementId = 'G-Z2KHD77M8Y';
 
-  static bool get isConfigured =>
-      apiKey.isNotEmpty && !apiKey.startsWith('YOUR_');
+  static bool get isConfigured => true;
 
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
