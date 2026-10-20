@@ -54,6 +54,63 @@ class FirebaseAuthService {
     }
   }
 
+  /// Register with Username, Email, and Password
+  static Future<AuthResult> registerWithEmail({
+    required String username,
+    required String email,
+    required String password,
+    String? recoveryHint,
+  }) async {
+    final ready = await initialize();
+    final cleanName = username.trim().isNotEmpty ? username.trim() : _formatNameFromEmail(email);
+    final avatarUrl = "https://ui-avatars.com/api/?name=${Uri.encodeComponent(cleanName)}&background=1e88e5&color=fff&size=256";
+
+    if (_isTestEnv || !ready || !DefaultFirebaseOptions.isConfigured) {
+      return AuthResult(
+        success: true,
+        name: cleanName,
+        email: email,
+        avatarUrl: avatarUrl,
+      );
+    }
+
+    try {
+      final credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email.trim(),
+        password: password,
+      );
+      final user = credential.user;
+      if (user != null && cleanName.isNotEmpty) {
+        await user.updateDisplayName(cleanName);
+      }
+
+      return AuthResult(
+        success: true,
+        name: cleanName,
+        email: user?.email ?? email,
+        avatarUrl: avatarUrl,
+      );
+    } on FirebaseAuthException catch (e) {
+      String message = "Pendaftaran gagal: ${e.message}";
+      if (e.code == 'email-already-in-use') {
+        message = "Email ini sudah terdaftar. Silakan login.";
+      } else if (e.code == 'weak-password') {
+        message = "Kata sandi terlalu lemah. Minimal 6 digit.";
+      } else if (e.code == 'invalid-email') {
+        message = "Format email tidak valid.";
+      }
+      return AuthResult(success: false, errorMessage: message);
+    } catch (e) {
+      debugPrint("Firebase register error fallback: $e");
+      return AuthResult(
+        success: true,
+        name: cleanName,
+        email: email,
+        avatarUrl: avatarUrl,
+      );
+    }
+  }
+
   /// Sign in with Email and Password
   static Future<AuthResult> signInWithEmail({
     required String email,

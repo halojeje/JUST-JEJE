@@ -1,8 +1,8 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../theme/app_themes.dart';
-
 import '../services/firebase_auth_service.dart';
+import 'register_view.dart';
 
 class GoogleLogo extends StatelessWidget {
   final double size;
@@ -72,11 +72,13 @@ class _GoogleLogoPainter extends CustomPainter {
 
 class LoginView extends StatefulWidget {
   final Function(String name, String email, String? avatarUrl) onLoginSuccess;
+  final VoidCallback? onNavigateRegister;
   final ThemeItem theme;
 
   const LoginView({
     super.key,
     required this.onLoginSuccess,
+    this.onNavigateRegister,
     required this.theme,
   });
 
@@ -225,15 +227,22 @@ class _LoginViewState extends State<LoginView> {
                 children: [
                   const SizedBox(height: 20),
 
-                  // Center Big App Title "JUST JEJE"
+                  // Center Big App Title "JUST JEJE" with Shadow
                   Text(
                     "JUST JEJE",
                     textAlign: TextAlign.center,
                     style: AppThemes.font(
-                      fontSize: 26,
+                      fontSize: 27,
                       fontWeight: FontWeight.w900,
                       color: const Color(0xFF000000),
                       letterSpacing: 0.5,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black.withValues(alpha: 0.20),
+                          offset: const Offset(0, 3),
+                          blurRadius: 6,
+                        ),
+                      ],
                     ),
                   ),
 
@@ -273,6 +282,8 @@ class _LoginViewState extends State<LoginView> {
                           keyboardType: TextInputType.emailAddress,
                           style: AppThemes.font(fontSize: 14, color: const Color(0xFF111827)),
                           decoration: InputDecoration(
+                            hintText: "email@todolist.com",
+                            hintStyle: AppThemes.font(fontSize: 13.5, color: const Color(0xFF9CA3AF)),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
                             filled: true,
                             fillColor: const Color(0xFFFAFAFA),
@@ -326,6 +337,8 @@ class _LoginViewState extends State<LoginView> {
                           obscureText: _obscurePassword,
                           style: AppThemes.font(fontSize: 14, color: const Color(0xFF111827)),
                           decoration: InputDecoration(
+                            hintText: "******",
+                            hintStyle: AppThemes.font(fontSize: 14, color: const Color(0xFF9CA3AF), letterSpacing: 2.0),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
                             filled: true,
                             fillColor: const Color(0xFFFAFAFA),
@@ -454,6 +467,51 @@ class _LoginViewState extends State<LoginView> {
                         ),
                       ],
                     ),
+                  ),
+
+                  // Teks dibawah & di luar card: First time user? Register here
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          "First time user? ",
+                          style: AppThemes.font(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: const Color(0xFF6B7280),
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          if (widget.onNavigateRegister != null) {
+                            widget.onNavigateRegister!();
+                          } else {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (ctx) => RegisterView(
+                                  onRegisterSuccess: widget.onLoginSuccess,
+                                  onNavigateLogin: () => Navigator.pop(ctx),
+                                  theme: widget.theme,
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        child: Text(
+                          "Register here",
+                          style: AppThemes.font(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF000000),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
 
                   const SizedBox(height: 30),

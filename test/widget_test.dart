@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:just_jeje/main.dart';
 import 'package:just_jeje/theme/app_themes.dart';
 import 'package:just_jeje/views/login_view.dart';
+import 'package:just_jeje/views/register_view.dart';
 
 void main() {
   testWidgets('App smoke test', (WidgetTester tester) async {
@@ -36,6 +37,8 @@ void main() {
     expect(find.text('LOGIN'), findsOneWidget);
     expect(find.text('atau'), findsOneWidget);
     expect(find.text('Sign in with Google'), findsOneWidget);
+    expect(find.text('First time user? '), findsOneWidget);
+    expect(find.text('Register here'), findsOneWidget);
 
     // Test entering email and submitting
     final emailField = find.byType(TextField).first;
@@ -71,5 +74,49 @@ void main() {
 
     expect(loggedName, 'Jeihan Maharani');
     expect(loggedEmail, 'jeihanm@gmail.com');
+  });
+
+  testWidgets('RegisterView renders all required fields and validates 6 digit password', (WidgetTester tester) async {
+    String? registeredName;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: RegisterView(
+          theme: AppThemes.allThemes.first,
+          onNavigateLogin: () {},
+          onRegisterSuccess: (name, email, pic) {
+            registeredName = name;
+          },
+        ),
+      ),
+    );
+
+    // Verify REGISTER card and form labels
+    expect(find.text('REGISTER'), findsNWidgets(2));
+    expect(find.text('Username'), findsOneWidget);
+    expect(find.text('Alamat Email'), findsOneWidget);
+    expect(find.text('Kata Sandi'), findsOneWidget);
+    expect(find.text('Forgot Password'), findsOneWidget);
+    expect(find.text('Already have an account? '), findsOneWidget);
+    expect(find.text('Login here'), findsOneWidget);
+
+    // Test password < 6 digits fails
+    final fields = find.byType(TextField);
+    await tester.enterText(fields.at(0), 'jeihan');
+    await tester.enterText(fields.at(1), 'jeihan@gmail.com');
+    await tester.enterText(fields.at(2), '12345'); // only 5 digits
+    await tester.tap(find.widgetWithText(ElevatedButton, 'REGISTER'));
+    await tester.pump();
+
+    expect(find.text('Kata sandi harus minimal 6 digit!'), findsOneWidget);
+    expect(registeredName, isNull);
+
+    // Test password >= 6 digits succeeds
+    await tester.enterText(fields.at(2), '123456'); // 6 digits
+    await tester.tap(find.widgetWithText(ElevatedButton, 'REGISTER'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(registeredName, 'jeihan');
   });
 }

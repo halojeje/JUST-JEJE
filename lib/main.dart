@@ -12,6 +12,7 @@ import 'widgets/modals/add_list_modal.dart';
 import 'views/dashboard_view.dart';
 import 'views/generate_view.dart';
 import 'views/login_view.dart';
+import 'views/register_view.dart';
 import 'views/settings_view.dart';
 import 'services/firebase_auth_service.dart';
 
@@ -40,6 +41,7 @@ class _JustJejeAppState extends State<JustJejeApp> {
   String _userEmail = "user@email.com";
   String? _userPicture;
   bool _isLoggedIn = false;
+  bool _showRegister = false;
   String _currentThemeId = "basic";
 
   bool _isLoading = true;
@@ -51,7 +53,9 @@ class _JustJejeAppState extends State<JustJejeApp> {
   @override
   void initState() {
     super.initState();
-    _confettiController = ConfettiController(duration: const Duration(milliseconds: 700));
+    _confettiController = ConfettiController(
+      duration: const Duration(milliseconds: 700),
+    );
     _loadInitialData();
   }
 
@@ -99,8 +103,12 @@ class _JustJejeAppState extends State<JustJejeApp> {
       setState(() {
         if (remote.taskGroups.isNotEmpty) _taskGroups = remote.taskGroups;
         if (remote.poolItems.isNotEmpty) _poolItems = remote.poolItems;
-        if (remote.username != null && remote.username!.isNotEmpty) _username = remote.username!;
-        if (remote.theme != null && remote.theme!.isNotEmpty) _currentThemeId = remote.theme!;
+        if (remote.username != null && remote.username!.isNotEmpty) {
+          _username = remote.username!;
+        }
+        if (remote.theme != null && remote.theme!.isNotEmpty) {
+          _currentThemeId = remote.theme!;
+        }
       });
       StorageService.saveTaskGroups(_taskGroups);
       StorageService.savePoolItems(_poolItems);
@@ -110,17 +118,20 @@ class _JustJejeAppState extends State<JustJejeApp> {
 
     // 2. Realtime subscription
     _unsubscribeRealtime?.call();
-    _unsubscribeRealtime = SupabaseService.setupRealtimeSubscription(config, () {
-      SupabaseService.fetchRemoteData(config).then((remote) {
-        if (remote == null || !mounted) return;
-        setState(() {
-          if (remote.taskGroups.isNotEmpty) _taskGroups = remote.taskGroups;
-          if (remote.poolItems.isNotEmpty) _poolItems = remote.poolItems;
-          if (remote.username != null) _username = remote.username!;
-          if (remote.theme != null) _currentThemeId = remote.theme!;
+    _unsubscribeRealtime = SupabaseService.setupRealtimeSubscription(
+      config,
+      () {
+        SupabaseService.fetchRemoteData(config).then((remote) {
+          if (remote == null || !mounted) return;
+          setState(() {
+            if (remote.taskGroups.isNotEmpty) _taskGroups = remote.taskGroups;
+            if (remote.poolItems.isNotEmpty) _poolItems = remote.poolItems;
+            if (remote.username != null) _username = remote.username!;
+            if (remote.theme != null) _currentThemeId = remote.theme!;
+          });
         });
-      });
-    });
+      },
+    );
   }
 
   void _triggerAutoSync() {
@@ -129,7 +140,9 @@ class _JustJejeAppState extends State<JustJejeApp> {
     StorageService.saveUsername(_username);
     StorageService.saveTheme(_currentThemeId);
 
-    if (!_supabaseConfig.isConnected || !_supabaseConfig.autoSync || _supabaseConfig.url.isEmpty) {
+    if (!_supabaseConfig.isConnected ||
+        !_supabaseConfig.autoSync ||
+        _supabaseConfig.url.isEmpty) {
       return;
     }
 
@@ -149,7 +162,10 @@ class _JustJejeAppState extends State<JustJejeApp> {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: AppThemes.font(fontSize: 13, fontWeight: FontWeight.w600)),
+        content: Text(
+          message,
+          style: AppThemes.font(fontSize: 13, fontWeight: FontWeight.w600),
+        ),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(milliseconds: 2500),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -268,7 +284,10 @@ class _JustJejeAppState extends State<JustJejeApp> {
   }
 
   void _handleDeleteGroup(String groupId) {
-    final group = _taskGroups.firstWhere((g) => g.id == groupId, orElse: () => _taskGroups[0]);
+    final group = _taskGroups.firstWhere(
+      (g) => g.id == groupId,
+      orElse: () => _taskGroups[0],
+    );
     final title = group.title;
 
     setState(() {
@@ -341,7 +360,11 @@ class _JustJejeAppState extends State<JustJejeApp> {
     _showToast("Tema diganti: ${normalized.toUpperCase()}");
 
     if (_supabaseConfig.isConnected && _supabaseConfig.url.isNotEmpty) {
-      SupabaseService.updateUserSettingsInSupabase(_supabaseConfig, _username, normalized);
+      SupabaseService.updateUserSettingsInSupabase(
+        _supabaseConfig,
+        _username,
+        normalized,
+      );
     }
   }
 
@@ -375,6 +398,7 @@ class _JustJejeAppState extends State<JustJejeApp> {
       _userEmail = email;
       _userPicture = avatarUrl;
       _isLoggedIn = true;
+      _showRegister = false;
       _currentView = "dashboard";
     });
     StorageService.saveUsername(name);
@@ -393,6 +417,7 @@ class _JustJejeAppState extends State<JustJejeApp> {
       _userEmail = "user@email.com";
       _userPicture = null;
       _username = "Username";
+      _showRegister = false;
       _currentView = "dashboard";
     });
     StorageService.clearAuth();
@@ -427,8 +452,16 @@ class _JustJejeAppState extends State<JustJejeApp> {
           }
 
           if (!_isLoggedIn) {
+            if (_showRegister) {
+              return RegisterView(
+                onRegisterSuccess: _handleLoginSuccess,
+                onNavigateLogin: () => setState(() => _showRegister = false),
+                theme: theme,
+              );
+            }
             return LoginView(
               onLoginSuccess: _handleLoginSuccess,
+              onNavigateRegister: () => setState(() => _showRegister = true),
               theme: theme,
             );
           }
@@ -439,8 +472,10 @@ class _JustJejeAppState extends State<JustJejeApp> {
             appBar: AppHeader(
               currentView: _currentView,
               onOpenSettings: () => setState(() => _currentView = "settings"),
-              onNavigateGenerate: () => setState(() => _currentView = "generate"),
-              onNavigateDashboard: () => setState(() => _currentView = "dashboard"),
+              onNavigateGenerate: () =>
+                  setState(() => _currentView = "generate"),
+              onNavigateDashboard: () =>
+                  setState(() => _currentView = "dashboard"),
               theme: theme,
             ),
             body: AnimatedSwitcher(
@@ -456,7 +491,8 @@ class _JustJejeAppState extends State<JustJejeApp> {
                       onDeleteTask: _handleDeleteTask,
                       onEditTask: _handleEditTask,
                       onSaveToPool: _handleSaveToPool,
-                      onNavigateGenerate: () => setState(() => _currentView = "generate"),
+                      onNavigateGenerate: () =>
+                          setState(() => _currentView = "generate"),
                       onOpenAddList: () {
                         showDialog(
                           context: context,
@@ -470,69 +506,78 @@ class _JustJejeAppState extends State<JustJejeApp> {
                       theme: theme,
                     )
                   : _currentView == "generate"
-                      ? GenerateView(
-                          poolItems: _poolItems,
-                          onDeletePoolItem: _handleDeletePoolItem,
-                          onEditPoolItem: _handleEditPoolItem,
-                          onSendToDashboard: _handleSendToDashboard,
-                          onOpenAddIdea: () {
-                            showDialog(
-                              context: context,
-                              builder: (ctx) => AddIdeaModal(
-                                onAddIdea: _handleAddPoolItem,
-                                theme: theme,
-                              ),
-                            );
-                          },
-                          onRestoreDefaults: () {
-                            setState(() => _poolItems = StorageService.getDefaultPoolItems());
-                            StorageService.savePoolItems(_poolItems);
-                          },
-                          onAddIdea: _handleAddPoolItem,
-                          theme: theme,
-                        )
-                      : SettingsView(
-                          googleConfig: _googleConfig,
-                          onSaveGoogleConfig: (cfg) {
-                            setState(() => _googleConfig = cfg);
-                            StorageService.saveGoogleConfig(cfg);
-                          },
-                          supabaseConfig: _supabaseConfig,
-                          onSaveSupabaseConfig: (cfg) {
-                            setState(() => _supabaseConfig = cfg);
-                            StorageService.saveSupabaseConfig(cfg);
-                            _initSupabaseSync(cfg);
-                          },
-                          onSyncSupabaseNow: _handleSyncSupabaseNow,
-                          onResetToDefaults: _handleResetToDefaults,
-                          taskGroups: _taskGroups,
-                          currentThemeId: _currentThemeId,
-                          onThemeChange: _handleThemeChange,
-                          username: _username,
-                          onUpdateUsername: (name) {
-                            setState(() => _username = name);
-                            StorageService.saveUsername(name);
-                          },
-                          userEmail: _userEmail,
-                          userPicture: _userPicture,
-                          onUpdateUserPicture: (pic) {
-                            setState(() => _userPicture = pic);
-                            StorageService.saveUserPicture(pic);
-                          },
-                          onLogout: _handleLogout,
-                          theme: theme,
-                        ),
+                  ? GenerateView(
+                      poolItems: _poolItems,
+                      onDeletePoolItem: _handleDeletePoolItem,
+                      onEditPoolItem: _handleEditPoolItem,
+                      onSendToDashboard: _handleSendToDashboard,
+                      onOpenAddIdea: () {
+                        showDialog(
+                          context: context,
+                          builder: (ctx) => AddIdeaModal(
+                            onAddIdea: _handleAddPoolItem,
+                            theme: theme,
+                          ),
+                        );
+                      },
+                      onRestoreDefaults: () {
+                        setState(
+                          () =>
+                              _poolItems = StorageService.getDefaultPoolItems(),
+                        );
+                        StorageService.savePoolItems(_poolItems);
+                      },
+                      onAddIdea: _handleAddPoolItem,
+                      theme: theme,
+                    )
+                  : SettingsView(
+                      googleConfig: _googleConfig,
+                      onSaveGoogleConfig: (cfg) {
+                        setState(() => _googleConfig = cfg);
+                        StorageService.saveGoogleConfig(cfg);
+                      },
+                      supabaseConfig: _supabaseConfig,
+                      onSaveSupabaseConfig: (cfg) {
+                        setState(() => _supabaseConfig = cfg);
+                        StorageService.saveSupabaseConfig(cfg);
+                        _initSupabaseSync(cfg);
+                      },
+                      onSyncSupabaseNow: _handleSyncSupabaseNow,
+                      onResetToDefaults: _handleResetToDefaults,
+                      taskGroups: _taskGroups,
+                      currentThemeId: _currentThemeId,
+                      onThemeChange: _handleThemeChange,
+                      username: _username,
+                      onUpdateUsername: (name) {
+                        setState(() => _username = name);
+                        StorageService.saveUsername(name);
+                      },
+                      userEmail: _userEmail,
+                      userPicture: _userPicture,
+                      onUpdateUserPicture: (pic) {
+                        setState(() => _userPicture = pic);
+                        StorageService.saveUserPicture(pic);
+                      },
+                      onLogout: _handleLogout,
+                      theme: theme,
+                    ),
             ),
             floatingActionButton: _currentView == "dashboard"
                 ? FloatingActionButton.extended(
                     heroTag: "fab_add_list",
                     elevation: 3,
-                    backgroundColor: theme.isDark ? const Color(0xFF2D354B) : const Color(0xFFCFD3D8),
-                    foregroundColor: theme.isDark ? const Color(0xFFCBD5E1) : const Color(0xFF4B5563),
+                    backgroundColor: theme.isDark
+                        ? const Color(0xFF2D354B)
+                        : const Color(0xFFCFD3D8),
+                    foregroundColor: theme.isDark
+                        ? const Color(0xFFCBD5E1)
+                        : const Color(0xFF4B5563),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                       side: BorderSide(
-                        color: theme.isDark ? Colors.white.withValues(alpha: 0.12) : Colors.transparent,
+                        color: theme.isDark
+                            ? Colors.white.withValues(alpha: 0.12)
+                            : Colors.transparent,
                       ),
                     ),
                     icon: const Icon(Icons.add, size: 19),

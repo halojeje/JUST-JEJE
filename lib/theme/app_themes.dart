@@ -298,6 +298,7 @@ class AppThemes {
     TextDecoration? decoration,
     Color? decorationColor,
     double? letterSpacing,
+    List<Shadow>? shadows,
   }) {
     return GoogleFonts.plusJakartaSans(
       fontSize: fontSize,
@@ -307,6 +308,7 @@ class AppThemes {
       decoration: decoration,
       decorationColor: decorationColor,
       letterSpacing: letterSpacing,
+      shadows: shadows,
     );
   }
 }
