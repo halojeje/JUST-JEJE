@@ -2,6 +2,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../theme/app_themes.dart';
 
+import '../services/firebase_auth_service.dart';
+
 class GoogleLogo extends StatelessWidget {
   final double size;
   const GoogleLogo({super.key, this.size = 20});
@@ -86,6 +88,7 @@ class _LoginViewState extends State<LoginView> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -94,17 +97,10 @@ class _LoginViewState extends State<LoginView> {
     super.dispose();
   }
 
-  String _formatNameFromEmail(String email) {
-    final clean = email.trim();
-    if (!clean.contains("@")) return clean.isEmpty ? "Username" : clean;
-    final prefix = clean.split("@").first;
-    final parts = prefix.split(RegExp(r'[._-]+')).where((p) => p.isNotEmpty);
-    if (parts.isEmpty) return "Username";
-    return parts.map((p) => p[0].toUpperCase() + (p.length > 1 ? p.substring(1) : "")).join(" ");
-  }
-
-  void _handleEmailLogin() {
+  Future<void> _handleEmailLogin() async {
     final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
     if (email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -116,50 +112,96 @@ class _LoginViewState extends State<LoginView> {
       return;
     }
 
-    final name = _formatNameFromEmail(email);
-    // Generate an avatar picture URL based on the user's name/email
-    final avatarUrl = "https://ui-avatars.com/api/?name=${Uri.encodeComponent(name)}&background=1e88e5&color=fff&size=256";
+    setState(() => _isSubmitting = true);
+    final result = await FirebaseAuthService.signInWithEmail(
+      email: email,
+      password: password,
+    );
+    if (!mounted) return;
+    setState(() => _isSubmitting = false);
 
-    widget.onLoginSuccess(name, email, avatarUrl);
+    if (result.success) {
+      widget.onLoginSuccess(
+        result.name ?? "User",
+        result.email ?? email,
+        result.avatarUrl,
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.errorMessage ?? "Gagal login", style: AppThemes.font(fontSize: 13)),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
-  void _handleGoogleLogin() {
-    const googleName = "Jeihan Maharani";
-    const googleEmail = "jeihanm@gmail.com";
-    const googleAvatarUrl = "https://ui-avatars.com/api/?name=Jeihan+Maharani&background=ea4335&color=fff&size=256";
+  Future<void> _handleGoogleLogin() async {
+    setState(() => _isSubmitting = true);
+    final result = await FirebaseAuthService.signInWithGoogle();
+    if (!mounted) return;
+    setState(() => _isSubmitting = false);
 
-    widget.onLoginSuccess(googleName, googleEmail, googleAvatarUrl);
+    if (result.success) {
+      widget.onLoginSuccess(
+        result.name ?? "Google User",
+        result.email ?? "google_user@gmail.com",
+        result.avatarUrl,
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.errorMessage ?? "Gagal login Google", style: AppThemes.font(fontSize: 13)),
+          backgroundColor: Colors.red.shade600,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   void _handleForgotPassword() {
+    final email = _emailController.text.trim();
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text("Lupa Kata Sandi?", style: AppThemes.font(fontWeight: FontWeight.bold)),
         content: Text(
-          "Tautan untuk mereset kata sandi akan dikirim ke alamat email Anda. Pastikan email yang dimasukkan sudah benar.",
+          email.isNotEmpty
+              ? "Tautan reset kata sandi akan dikirim ke alamat email:\n$email"
+              : "Masukkan alamat email Anda terlebih dahulu pada kolom email untuk menerima tautan reset kata sandi.",
           style: AppThemes.font(fontSize: 13.5, height: 1.4),
         ),
         actions: [
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.black,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            ),
-            onPressed: () {
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text("Instruksi reset kata sandi telah dikirim!", style: AppThemes.font(fontSize: 13)),
-                  backgroundColor: const Color(0xFF10B981),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
-            },
-            child: const Text("Kirim Tautan"),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Tutup"),
           ),
+          if (email.isNotEmpty)
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () async {
+                Navigator.pop(ctx);
+                final sent = await FirebaseAuthService.sendPasswordReset(email);
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      sent ? "Instruksi reset kata sandi telah dikirim!" : "Gagal mengirim email reset.",
+                      style: AppThemes.font(fontSize: 13),
+                    ),
+                    backgroundColor: sent ? const Color(0xFF10B981) : Colors.red.shade600,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+              child: const Text("Kirim Tautan"),
+            ),
         ],
       ),
     );
@@ -325,15 +367,24 @@ class _LoginViewState extends State<LoginView> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            onPressed: _handleEmailLogin,
-                            child: Text(
-                              "LOGIN",
-                              style: AppThemes.font(
-                                fontSize: 14.5,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.8,
-                              ),
-                            ),
+                            onPressed: _isSubmitting ? null : _handleEmailLogin,
+                            child: _isSubmitting
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : Text(
+                                    "LOGIN",
+                                    style: AppThemes.font(
+                                      fontSize: 14.5,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.8,
+                                    ),
+                                  ),
                           ),
                         ),
 

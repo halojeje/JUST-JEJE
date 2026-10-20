@@ -13,6 +13,7 @@ import 'views/dashboard_view.dart';
 import 'views/generate_view.dart';
 import 'views/login_view.dart';
 import 'views/settings_view.dart';
+import 'services/firebase_auth_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -385,6 +386,7 @@ class _JustJejeAppState extends State<JustJejeApp> {
   }
 
   void _handleLogout() {
+    FirebaseAuthService.signOut();
     setState(() {
       _isLoggedIn = false;
       _userEmail = "user@email.com";

@@ -670,16 +670,27 @@ class _SettingsViewState extends State<SettingsView> {
           // 7. Logout Button
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: widget.theme.isDark ? const Color(0xFF374151) : const Color(0xFF1F2937),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            child: SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: widget.theme.isDark ? const Color(0xFF374151) : const Color(0xFF1F2937),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                icon: const Icon(Icons.logout, size: 18),
+                label: Text(
+                  "LOGOUT",
+                  style: AppThemes.font(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+                onPressed: _showLogoutDialog,
               ),
-              icon: const Icon(Icons.logout, size: 17),
-              label: Text("LOGOUT", style: AppThemes.font(fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: 0.8)),
-              onPressed: _showLogoutDialog,
             ),
           ),
         ],
