@@ -228,3 +228,35 @@ class SupabaseConfig {
     );
   }
 }
+
+class UserProfile {
+  String name;
+  String email;
+  String? avatarUrl;
+  bool isLoggedIn;
+
+  UserProfile({
+    required this.name,
+    required this.email,
+    this.avatarUrl,
+    this.isLoggedIn = false,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'email': email,
+      'avatarUrl': avatarUrl,
+      'isLoggedIn': isLoggedIn,
+    };
+  }
+
+  factory UserProfile.fromJson(Map<String, dynamic> json) {
+    return UserProfile(
+      name: json['name'] as String? ?? 'Username',
+      email: json['email'] as String? ?? 'user@email.com',
+      avatarUrl: json['avatarUrl'] as String?,
+      isLoggedIn: json['isLoggedIn'] as bool? ?? false,
+    );
+  }
+}

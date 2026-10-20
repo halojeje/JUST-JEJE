@@ -17,6 +17,10 @@ class SettingsView extends StatefulWidget {
   final Function(String) onThemeChange;
   final String username;
   final Function(String) onUpdateUsername;
+  final String userEmail;
+  final String? userPicture;
+  final Function(String?)? onUpdateUserPicture;
+  final VoidCallback onLogout;
   final ThemeItem theme;
 
   const SettingsView({
@@ -32,6 +36,10 @@ class SettingsView extends StatefulWidget {
     required this.onThemeChange,
     required this.username,
     required this.onUpdateUsername,
+    this.userEmail = "user@email.com",
+    this.userPicture,
+    this.onUpdateUserPicture,
+    required this.onLogout,
     required this.theme,
   });
 
@@ -71,6 +79,100 @@ class _SettingsViewState extends State<SettingsView> {
       _usernameController.text = widget.username;
     }
     setState(() => _isEditingUsername = false);
+  }
+
+  void _showChangeAvatarDialog() {
+    final controller = TextEditingController(text: widget.userPicture ?? "");
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        backgroundColor: widget.theme.panel,
+        title: Text(
+          "Ganti Foto Profil",
+          style: AppThemes.font(fontWeight: FontWeight.bold, color: widget.theme.textPrimary),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Masukkan URL foto profil atau pilih opsi cepat:",
+              style: AppThemes.font(fontSize: 13, color: widget.theme.textSecondary),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: controller,
+              style: AppThemes.font(fontSize: 13, color: widget.theme.textPrimary),
+              decoration: InputDecoration(
+                hintText: "https://example.com/photo.jpg",
+                hintStyle: AppThemes.font(fontSize: 12, color: widget.theme.textMuted),
+                isDense: true,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  onPressed: () {
+                    final cleanName = widget.username.isNotEmpty ? widget.username : "User";
+                    controller.text = "https://ui-avatars.com/api/?name=${Uri.encodeComponent(cleanName)}&background=1e88e5&color=fff&size=256";
+                  },
+                  child: Text("Sesuai Nama", style: AppThemes.font(fontSize: 11)),
+                ),
+                OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  onPressed: () {
+                    final cleanEmail = widget.userEmail.isNotEmpty ? widget.userEmail : "user@email.com";
+                    controller.text = "https://api.dicebear.com/7.x/identicon/png?seed=${Uri.encodeComponent(cleanEmail)}";
+                  },
+                  child: Text("DiceBear", style: AppThemes.font(fontSize: 11)),
+                ),
+                OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  onPressed: () {
+                    controller.clear();
+                  },
+                  child: Text("Hapus Foto", style: AppThemes.font(fontSize: 11)),
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text("Batal", style: AppThemes.font(color: widget.theme.textMuted)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: widget.theme.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              final val = controller.text.trim();
+              widget.onUpdateUserPicture?.call(val.isEmpty ? null : val);
+            },
+            child: const Text("Simpan"),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showLogoutDialog() {
@@ -115,6 +217,7 @@ class _SettingsViewState extends State<SettingsView> {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text("Anda telah berhasil logout.")),
               );
+              widget.onLogout();
             },
             child: Text("Logout", style: AppThemes.font(fontWeight: FontWeight.bold)),
           ),
@@ -207,8 +310,9 @@ class _SettingsViewState extends State<SettingsView> {
 
   @override
   Widget build(BuildContext context) {
-    final activeEmail = widget.googleConfig.userEmail ?? "user@email.com";
-    final avatarLetter = (widget.username.isNotEmpty ? widget.username[0] : "U").toUpperCase();
+    final activeEmail = widget.userEmail.isNotEmpty ? widget.userEmail : (widget.googleConfig.userEmail ?? "user@email.com");
+    final avatarLetter = (widget.username.isNotEmpty ? widget.username[0] : (activeEmail.isNotEmpty ? activeEmail[0] : "U")).toUpperCase();
+    final hasPicture = widget.userPicture != null && widget.userPicture!.trim().isNotEmpty;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: 50),
@@ -233,16 +337,68 @@ class _SettingsViewState extends State<SettingsView> {
             ),
             child: Row(
               children: [
-                // Avatar Circle
-                CircleAvatar(
-                  radius: 28,
-                  backgroundColor: widget.theme.primaryLight,
-                  child: Text(
-                    avatarLetter,
-                    style: AppThemes.font(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: widget.theme.primary,
+                // Avatar Circle with photo or letter (Tap to change)
+                Tooltip(
+                  message: "Ketuk untuk mengganti foto profil",
+                  child: GestureDetector(
+                    onTap: _showChangeAvatarDialog,
+                    child: Stack(
+                      children: [
+                        Container(
+                          width: 58,
+                          height: 58,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: widget.theme.primaryLight,
+                            border: Border.all(
+                              color: widget.theme.primary.withValues(alpha: 0.35),
+                              width: 2,
+                            ),
+                          ),
+                          child: ClipOval(
+                            child: hasPicture
+                                ? Image.network(
+                                    widget.userPicture!,
+                                    width: 58,
+                                    height: 58,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) => Center(
+                                      child: Text(
+                                        avatarLetter,
+                                        style: AppThemes.font(
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.w800,
+                                          color: widget.theme.primary,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : Center(
+                                    child: Text(
+                                      avatarLetter,
+                                      style: AppThemes.font(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w800,
+                                        color: widget.theme.primary,
+                                      ),
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(3.5),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: widget.theme.primary,
+                              border: Border.all(color: widget.theme.panel, width: 2),
+                            ),
+                            child: const Icon(Icons.camera_alt, size: 10, color: Colors.white),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

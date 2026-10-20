@@ -11,6 +11,7 @@ import 'widgets/modals/add_idea_modal.dart';
 import 'widgets/modals/add_list_modal.dart';
 import 'views/dashboard_view.dart';
 import 'views/generate_view.dart';
+import 'views/login_view.dart';
 import 'views/settings_view.dart';
 
 void main() async {
@@ -34,6 +35,9 @@ class _JustJejeAppState extends State<JustJejeApp> {
   SupabaseConfig _supabaseConfig = StorageService.getDefaultSupabaseConfig();
 
   String _username = "Username";
+  String _userEmail = "user@email.com";
+  String? _userPicture;
+  bool _isLoggedIn = false;
   String _currentThemeId = "basic";
 
   bool _isLoading = true;
@@ -63,6 +67,9 @@ class _JustJejeAppState extends State<JustJejeApp> {
     final gConfig = await StorageService.loadGoogleConfig();
     final sConfig = await StorageService.loadSupabaseConfig();
     final user = await StorageService.loadUsername();
+    final email = await StorageService.loadUserEmail();
+    final pic = await StorageService.loadUserPicture();
+    final loggedIn = await StorageService.loadIsLoggedIn();
     final theme = await StorageService.loadTheme();
 
     setState(() {
@@ -71,6 +78,9 @@ class _JustJejeAppState extends State<JustJejeApp> {
       _googleConfig = gConfig;
       _supabaseConfig = sConfig;
       _username = user;
+      _userEmail = email;
+      _userPicture = pic;
+      _isLoggedIn = loggedIn;
       _currentThemeId = theme;
       _isLoading = false;
     });
@@ -357,6 +367,35 @@ class _JustJejeAppState extends State<JustJejeApp> {
     _showToast("Data dikembalikan ke setelan awal mockup!");
   }
 
+  void _handleLoginSuccess(String name, String email, String? avatarUrl) {
+    setState(() {
+      _username = name;
+      _userEmail = email;
+      _userPicture = avatarUrl;
+      _isLoggedIn = true;
+      _currentView = "dashboard";
+    });
+    StorageService.saveUsername(name);
+    StorageService.saveUserEmail(email);
+    StorageService.saveUserPicture(avatarUrl);
+    StorageService.saveIsLoggedIn(true);
+
+    _showToast("Selamat datang, $name!");
+    _triggerAutoSync();
+  }
+
+  void _handleLogout() {
+    setState(() {
+      _isLoggedIn = false;
+      _userEmail = "user@email.com";
+      _userPicture = null;
+      _username = "Username";
+      _currentView = "dashboard";
+    });
+    StorageService.clearAuth();
+    _showToast("Anda telah logout.");
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = AppThemes.getThemeById(_currentThemeId);
@@ -381,6 +420,13 @@ class _JustJejeAppState extends State<JustJejeApp> {
               body: Center(
                 child: CircularProgressIndicator(color: theme.primary),
               ),
+            );
+          }
+
+          if (!_isLoggedIn) {
+            return LoginView(
+              onLoginSuccess: _handleLoginSuccess,
+              theme: theme,
             );
           }
 
@@ -464,6 +510,13 @@ class _JustJejeAppState extends State<JustJejeApp> {
                             setState(() => _username = name);
                             StorageService.saveUsername(name);
                           },
+                          userEmail: _userEmail,
+                          userPicture: _userPicture,
+                          onUpdateUserPicture: (pic) {
+                            setState(() => _userPicture = pic);
+                            StorageService.saveUserPicture(pic);
+                          },
+                          onLogout: _handleLogout,
                           theme: theme,
                         ),
             ),

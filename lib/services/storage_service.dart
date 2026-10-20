@@ -9,6 +9,9 @@ class StorageService {
   static const String _keySupabaseConfig = 'just_jeje_supabase_config';
   static const String _keyUsername = 'just_jeje_username';
   static const String _keyTheme = 'just_jeje_theme';
+  static const String _keyIsLoggedIn = 'just_jeje_is_logged_in';
+  static const String _keyUserEmail = 'just_jeje_user_email';
+  static const String _keyUserPicture = 'just_jeje_user_picture';
 
   static const String defaultSupabaseUrl = "https://vfkxwjjcdbbhtnxwaxqt.supabase.co";
   static const String defaultPublishableKey = "sb_publishable_OzVTIo6VWy75OToG4rOZfw_PQZZxP7Z";
@@ -191,6 +194,69 @@ class StorageService {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_keyTheme, themeId);
+    } catch (_) {}
+  }
+
+  // --- Auth Session ---
+  static Future<bool> loadIsLoggedIn() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getBool(_keyIsLoggedIn) ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<void> saveIsLoggedIn(bool isLoggedIn) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_keyIsLoggedIn, isLoggedIn);
+    } catch (_) {}
+  }
+
+  static Future<String> loadUserEmail() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_keyUserEmail) ?? "user@email.com";
+    } catch (_) {
+      return "user@email.com";
+    }
+  }
+
+  static Future<void> saveUserEmail(String email) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_keyUserEmail, email);
+    } catch (_) {}
+  }
+
+  static Future<String?> loadUserPicture() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_keyUserPicture);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<void> saveUserPicture(String? url) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (url == null || url.isEmpty) {
+        await prefs.remove(_keyUserPicture);
+      } else {
+        await prefs.setString(_keyUserPicture, url);
+      }
+    } catch (_) {}
+  }
+
+  static Future<void> clearAuth() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_keyIsLoggedIn, false);
+      await prefs.remove(_keyUserEmail);
+      await prefs.remove(_keyUserPicture);
+      await prefs.setString(_keyUsername, "Username");
     } catch (_) {}
   }
 }
