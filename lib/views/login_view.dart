@@ -177,61 +177,11 @@ class _LoginViewState extends State<LoginView> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 440),
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Status Bar Row (09:41, Cellular, Battery) matching the design
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text(
-                          "09:41",
-                          style: AppThemes.font(
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF111827),
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            // Signal bars icon
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Container(width: 2.5, height: 5, color: const Color(0xFF111827), margin: const EdgeInsets.symmetric(horizontal: 1)),
-                                Container(width: 2.5, height: 8, color: const Color(0xFF111827), margin: const EdgeInsets.symmetric(horizontal: 1)),
-                                Container(width: 2.5, height: 11, color: const Color(0xFF111827), margin: const EdgeInsets.symmetric(horizontal: 1)),
-                                Container(width: 2.5, height: 14, color: const Color(0xFF111827), margin: const EdgeInsets.symmetric(horizontal: 1)),
-                              ],
-                            ),
-                            const SizedBox(width: 6),
-                            // Battery icon
-                            Container(
-                              width: 22,
-                              height: 11.5,
-                              padding: const EdgeInsets.all(1.5),
-                              decoration: BoxDecoration(
-                                border: Border.all(color: const Color(0xFF111827), width: 1.4),
-                                borderRadius: BorderRadius.circular(3),
-                              ),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF111827),
-                                  borderRadius: BorderRadius.circular(1.5),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 38),
+                  const SizedBox(height: 20),
 
                   // Center Big App Title "JUST JEJE"
                   Text(
