@@ -1,5 +1,0 @@
-{
-  "framework": "vite",
-  "buildCommand": "npm --prefix \"JUST JEJE\" run build",
-  "outputDirectory": "JUST JEJE/dist"
-}

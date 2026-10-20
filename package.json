@@ -1,9 +1,0 @@
-{
-  "name": "jeje-to-do",
-  "private": true,
-  "scripts": {
-    "dev": "npm --prefix \"JUST JEJE\" run dev -- --host",
-    "build": "npm --prefix \"JUST JEJE\" run build",
-    "tauri": "npm --prefix \"JUST JEJE\" run tauri"
-  }
-}
