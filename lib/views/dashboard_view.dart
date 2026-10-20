@@ -72,14 +72,37 @@ class DashboardView extends StatelessWidget {
 
     return ListView.builder(
       padding: const EdgeInsets.only(bottom: 90),
-      itemCount: taskGroups.length,
+      itemCount: taskGroups.length + 1,
       itemBuilder: (context, index) {
+        if (index == taskGroups.length) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Center(
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: theme.textPrimary,
+                  side: BorderSide(color: theme.borderLight, width: 1.5),
+                  backgroundColor: theme.panel,
+                  padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                icon: Icon(Icons.add, size: 18, color: theme.primary),
+                label: Text(
+                  "Buat List Baru",
+                  style: AppThemes.font(fontWeight: FontWeight.bold, fontSize: 13.5),
+                ),
+                onPressed: onOpenAddList,
+              ),
+            ),
+          );
+        }
+
         final group = taskGroups[index];
         return TaskCard(
           key: ValueKey(group.id),
           group: group,
           poolItems: poolItems,
-          canDeleteGroup: true,
+          canDeleteGroup: index > 0,
           onDeleteGroup: onDeleteGroup,
           onUpdateGroupTitle: onUpdateGroupTitle,
           onAddTask: onAddTask,

@@ -36,8 +36,8 @@ class _AddIdeaModalState extends State<AddIdeaModal> {
   void _submit() {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
+    Navigator.of(context, rootNavigator: true).pop();
     widget.onAddIdea(text, _selectedCategory);
-    Navigator.pop(context);
   }
 
   @override

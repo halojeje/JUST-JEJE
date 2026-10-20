@@ -35,8 +35,8 @@ class _AddListModalState extends State<AddListModal> {
   void _submit() {
     final title = _controller.text.trim();
     if (title.isEmpty) return;
+    Navigator.of(context, rootNavigator: true).pop();
     widget.onAddListGroup(title);
-    Navigator.pop(context);
   }
 
   @override
