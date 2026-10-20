@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "316022951975",
+    "project_id": "chao571-todolist-project2026",
+    "storage_bucket": "chao571-todolist-project2026.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:316022951975:android:e89e951912475e9574fe02",
+        "android_client_info": {
+          "package_name": "com.jeje.todo.just_jeje"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "316022951975-nqspfn390vi32vmmcpd21jsv8diaio65.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC4BxdeRe0FbojEzTvkukHwLNhK4GuqBKg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "316022951975-nqspfn390vi32vmmcpd21jsv8diaio65.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
